@@ -6,12 +6,14 @@ const path = require("path");
 const fs = require("fs");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
+const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SECRET_KEY;
 
 if (!SESSION_SECRET) {
-  console.error("ERROR: SECRET_KEY environment variable is missing.");
+  console.error(
+    "ERROR: SECRET_KEY environment variable is missing."
+  );
   process.exit(1);
 }
 
@@ -30,6 +32,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin(origin, callback) {
+      // Requests without an Origin header
+      // are allowed (health checks, server-to-server, etc.)
       if (!origin) {
         return callback(null, true);
       }
@@ -38,11 +42,17 @@ app.use(
         return callback(null, true);
       }
 
+      console.warn(
+        `Blocked CORS origin: ${origin}`
+      );
+
       return callback(
         new Error("CORS origin not allowed")
       );
     },
+
     credentials: true,
+
     methods: [
       "GET",
       "POST",
@@ -51,6 +61,7 @@ app.use(
       "DELETE",
       "OPTIONS"
     ],
+
     allowedHeaders: [
       "Content-Type",
       "Authorization"
@@ -58,167 +69,9 @@ app.use(
   })
 );
 
-app.options("*", cors());
-
 /*
 |--------------------------------------------------------------------------
-| Data
-|--------------------------------------------------------------------------
-*/
-
-const DATA_DIR = path.join(__dirname, "data");
-
-const USERS_FILE =
-  path.join(DATA_DIR, "users.json");
-
-const TRANSACTIONS_FILE =
-  path.join(DATA_DIR, "transactions.json");
-
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, {
-    recursive: true
-  });
-}
-
-function loadJSON(file, fallback) {
-  try {
-    if (!fs.existsSync(file)) {
-      return fallback;
-    }
-
-    const raw =
-      fs.readFileSync(file, "utf8");
-
-    if (!raw.trim()) {
-      return fallback;
-    }
-
-    const parsed =
-      JSON.parse(raw);
-
-    return parsed;
-  } catch (error) {
-    console.error(
-      `Failed to load ${file}:`,
-      error.message
-    );
-
-    return fallback;
-  }
-}
-
-function saveJSON(file, data) {
-  const temporary =
-    `${file}.tmp`;
-
-  fs.writeFileSync(
-    temporary,
-    JSON.stringify(data, null, 2),
-    "utf8"
-  );
-
-  fs.renameSync(
-    temporary,
-    file
-  );
-}
-
-let users =
-  loadJSON(USERS_FILE, []);
-
-let transactions =
-  loadJSON(
-    TRANSACTIONS_FILE,
-    []
-  );
-
-if (!Array.isArray(users)) {
-  users = [];
-}
-
-if (!Array.isArray(transactions)) {
-  transactions = [];
-}
-
-/*
-|--------------------------------------------------------------------------
-| Prototype users
-|--------------------------------------------------------------------------
-*/
-
-if (users.length === 0) {
-  users = [
-    {
-      id: 1,
-      username: "alice",
-      password_hash:
-        bcrypt.hashSync(
-          "alice123",
-          10
-        ),
-      balance: 10000,
-      created_at:
-        new Date().toISOString()
-    },
-    {
-      id: 2,
-      username: "bob",
-      password_hash:
-        bcrypt.hashSync(
-          "bob123",
-          10
-        ),
-      balance: 10000,
-      created_at:
-        new Date().toISOString()
-    },
-    {
-      id: 3,
-      username: "carol",
-      password_hash:
-        bcrypt.hashSync(
-          "carol123",
-          10
-        ),
-      balance: 10000,
-      created_at:
-        new Date().toISOString()
-    }
-  ];
-
-  saveJSON(
-    USERS_FILE,
-    users
-  );
-
-  console.log(
-    "Prototype demo users created"
-  );
-}
-
-let nextUserId =
-  users.reduce(
-    (max, user) =>
-      Math.max(
-        max,
-        Number(user.id) || 0
-      ),
-    0
-  ) + 1;
-
-let nextTransactionId =
-  transactions.reduce(
-    (max, transaction) =>
-      Math.max(
-        max,
-        Number(transaction.id) || 0
-      ),
-    0
-  ) + 1;
-
-/*
-|--------------------------------------------------------------------------
-| Middleware
+| Body parsing
 |--------------------------------------------------------------------------
 */
 
@@ -235,32 +88,28 @@ app.use(
   })
 );
 
+/*
+|--------------------------------------------------------------------------
+| Proxy
+|--------------------------------------------------------------------------
+*/
+
 app.set(
   "trust proxy",
   1
 );
 
-const isProduction =
-  process.env.NODE_ENV ===
-  "production";
-
 /*
 |--------------------------------------------------------------------------
-| Sessions
+| Session
 |--------------------------------------------------------------------------
-|
-| GitHub Pages and Render are different sites.
-| Therefore the cookie must be SameSite=None
-| and Secure.
-|
 */
 
 app.use(
   session({
     name: "pukku.sid",
 
-    secret:
-      SESSION_SECRET,
+    secret: SESSION_SECRET,
 
     resave: false,
 
@@ -283,11 +132,240 @@ app.use(
 
 /*
 |--------------------------------------------------------------------------
+| Data files
+|--------------------------------------------------------------------------
+*/
+
+const DATA_DIR =
+  path.join(
+    __dirname,
+    "data"
+  );
+
+const USERS_FILE =
+  path.join(
+    DATA_DIR,
+    "users.json"
+  );
+
+const TRANSACTIONS_FILE =
+  path.join(
+    DATA_DIR,
+    "transactions.json"
+  );
+
+if (
+  !fs.existsSync(DATA_DIR)
+) {
+  fs.mkdirSync(
+    DATA_DIR,
+    {
+      recursive: true
+    }
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| JSON helpers
+|--------------------------------------------------------------------------
+*/
+
+function loadJSON(
+  file,
+  fallback
+) {
+  try {
+    if (
+      !fs.existsSync(file)
+    ) {
+      return fallback;
+    }
+
+    const raw =
+      fs.readFileSync(
+        file,
+        "utf8"
+      );
+
+    if (!raw.trim()) {
+      return fallback;
+    }
+
+    const parsed =
+      JSON.parse(raw);
+
+    return parsed;
+  } catch (error) {
+    console.error(
+      `Failed to load ${file}:`,
+      error.message
+    );
+
+    return fallback;
+  }
+}
+
+function saveJSON(
+  file,
+  data
+) {
+  const temporary =
+    `${file}.tmp`;
+
+  fs.writeFileSync(
+    temporary,
+    JSON.stringify(
+      data,
+      null,
+      2
+    ),
+    "utf8"
+  );
+
+  fs.renameSync(
+    temporary,
+    file
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Load data
+|--------------------------------------------------------------------------
+*/
+
+let users =
+  loadJSON(
+    USERS_FILE,
+    []
+  );
+
+let transactions =
+  loadJSON(
+    TRANSACTIONS_FILE,
+    []
+  );
+
+if (!Array.isArray(users)) {
+  users = [];
+}
+
+if (!Array.isArray(transactions)) {
+  transactions = [];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Prototype demo users
+|--------------------------------------------------------------------------
+*/
+
+if (users.length === 0) {
+  users = [
+    {
+      id: 1,
+
+      username: "alice",
+
+      password_hash:
+        bcrypt.hashSync(
+          "alice123",
+          10
+        ),
+
+      balance: 10000,
+
+      created_at:
+        new Date().toISOString()
+    },
+
+    {
+      id: 2,
+
+      username: "bob",
+
+      password_hash:
+        bcrypt.hashSync(
+          "bob123",
+          10
+        ),
+
+      balance: 10000,
+
+      created_at:
+        new Date().toISOString()
+    },
+
+    {
+      id: 3,
+
+      username: "carol",
+
+      password_hash:
+        bcrypt.hashSync(
+          "carol123",
+          10
+        ),
+
+      balance: 10000,
+
+      created_at:
+        new Date().toISOString()
+    }
+  ];
+
+  saveJSON(
+    USERS_FILE,
+    users
+  );
+
+  console.log(
+    "Prototype demo users created"
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| IDs
+|--------------------------------------------------------------------------
+*/
+
+let nextUserId =
+  users.reduce(
+    (
+      maximum,
+      user
+    ) =>
+      Math.max(
+        maximum,
+        Number(user.id) || 0
+      ),
+    0
+  ) + 1;
+
+let nextTransactionId =
+  transactions.reduce(
+    (
+      maximum,
+      transaction
+    ) =>
+      Math.max(
+        maximum,
+        Number(transaction.id) || 0
+      ),
+    0
+  ) + 1;
+
+/*
+|--------------------------------------------------------------------------
 | Helpers
 |--------------------------------------------------------------------------
 */
 
-function formatPukku(cents) {
+function formatPukku(
+  cents
+) {
   return (
     (
       cents / 100
@@ -297,7 +375,8 @@ function formatPukku(cents) {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
       }
-    ) + " pukku"
+    ) +
+    " pukku"
   );
 }
 
@@ -329,6 +408,7 @@ app.get(
   (req, res) => {
     res.json({
       status: "ok",
+
       time:
         new Date().toISOString()
     });
@@ -381,13 +461,14 @@ app.post(
         });
     }
 
-    if (
+    const exists =
       users.some(
         user =>
           user.username ===
           username
-      )
-    ) {
+      );
+
+    if (exists) {
       return res
         .status(400)
         .json({
@@ -428,6 +509,7 @@ app.post(
       );
 
       users.pop();
+
       nextUserId--;
 
       return res
@@ -440,6 +522,7 @@ app.post(
 
     res.json({
       success: true,
+
       message:
         "Tili luotu!"
     });
@@ -541,8 +624,10 @@ app.post(
 
             res.json({
               success: true,
+
               username:
                 user.username,
+
               id:
                 user.id
             });
@@ -575,7 +660,9 @@ app.post(
           "pukku.sid",
           {
             httpOnly: true,
+
             secure: true,
+
             sameSite: "none"
           }
         );
@@ -619,11 +706,15 @@ app.get(
     }
 
     res.json({
-      id: user.id,
+      id:
+        user.id,
+
       username:
         user.username,
+
       balance:
         user.balance,
+
       balanceStr:
         formatPukku(
           user.balance
@@ -676,7 +767,9 @@ app.get(
     }
 
     res.json({
-      id: user.id,
+      id:
+        user.id,
+
       username:
         user.username
     });
