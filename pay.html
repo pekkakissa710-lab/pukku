@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Siirrä — Pukku Pankki</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;
+    --blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);
+    --text:#10182B;--muted:#7C879E;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{
+    margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);
+    font-family:Inter,sans-serif;color:var(--text);padding:24px;
+  }
+  .device{
+    position:relative;width:100%;max-width:380px;
+    background:linear-gradient(180deg,var(--panel),#fff);
+    border-radius:32px;padding:32px 28px 28px;
+    border:1px solid var(--line);
+    box-shadow:0 40px 80px -30px rgba(16,24,40,.18);
+    overflow:hidden;min-height:620px;display:flex;flex-direction:column;
+  }
+  .device::before{
+    content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(16,24,40,.028) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(16,24,40,.028) 1px,transparent 1px);
+    background-size:24px 24px;
+    mask-image:radial-gradient(circle at 50% 20%,black,transparent 70%);
+    pointer-events:none;
+  }
+  .eyebrow{
+    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+    display:flex;align-items:center;gap:8px;z-index:1;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
+  .back{font-size:13px;color:var(--muted);text-decoration:none;margin-left:auto}
+  #payView{display:flex;flex-direction:column;flex:1;z-index:1}
+  .id-row{margin-top:20px}
+  .id-row label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+  .id-row input{
+    width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+    font-size:16px;font-family:'Space Grotesk',sans-serif;background:#F6F8FC;text-align:center;
+  }
+  .id-row input:focus{outline:none;border-color:var(--blue);background:#fff}
+  .receiver-name{font-size:13px;color:var(--blue);text-align:center;margin-top:6px;min-height:18px}
+  .amount-wrap{margin-top:20px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+  .currency-row{display:flex;align-items:baseline;gap:6px;font-family:'Space Grotesk',sans-serif}
+  .amount{font-size:52px;font-weight:700;letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
+  .amount.placeholder{color:rgba(16,24,40,.22)}
+  .currency{font-size:22px;font-weight:600;color:var(--muted)}
+  .amount-label{font-size:12px;color:var(--muted)}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+  .key{
+    appearance:none;border:1px solid var(--line);background:#F6F8FC;color:var(--text);
+    font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;
+    padding:14px 0;border-radius:14px;cursor:pointer;
+  }
+  .key:active{transform:scale(.94);background:rgba(62,123,250,.12)}
+  .key.func{color:var(--muted);font-size:14px}
+  .pay-btn{
+    margin-top:18px;width:100%;border:none;border-radius:18px;padding:18px 0;
+    font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#fff;
+    background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;
+    box-shadow:0 12px 30px -10px var(--blue-glow);
+  }
+  .pay-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+  .pay-btn.loading .spinner{display:inline-block}
+  .spinner{
+    width:18px;height:18px;border-radius:50%;
+    border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
+    display:none;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  #successView{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:1}
+  .accepted-title{margin-top:20px;font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700}
+  .accepted-sub{margin-top:8px;font-size:14px;color:var(--muted)}
+  .accepted-amount{
+    margin-top:16px;font-family:'Space Grotesk',sans-serif;font-size:15px;color:var(--blue);
+    background:rgba(62,123,250,.1);border:1px solid rgba(62,123,250,.25);
+    padding:8px 16px;border-radius:999px;
+  }
+  .new-payment{
+    margin-top:28px;background:none;border:1px solid var(--line);color:var(--muted);
+    font-size:13px;padding:11px 20px;border-radius:12px;cursor:pointer;
+  }
+  .error-box{
+    background:rgba(239,68,68,.1);color:#B91C1C;border:1px solid rgba(239,68,68,.25);
+    padding:10px 14px;border-radius:12px;font-size:13px;margin-top:12px;display:none;text-align:center;
+  }
+
+  /* FULL SCREEN SLEEP OVERLAY */
+  #sleepOverlay{
+    position:fixed;inset:0;z-index:9999;
+    background:#0f172a;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    color:#fff;text-align:center;padding:32px;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
+  #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
+  #sleepOverlay button{
+    padding:14px 28px;border:none;border-radius:14px;
+    background:linear-gradient(135deg,#3E7BFA,#2A5FE0);
+    color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
+    cursor:pointer;box-shadow:0 10px 25px -8px rgba(62,123,250,.4);
+  }
+</style>
+</head>
+<body>
+
+<!-- SLEEP OVERLAY -->
+<div id="sleepOverlay">
+  <h1>SERVER IS SLEEPING</h1>
+  <p>Render free-tier nukkuu. Paina nappia herättääksesi palvelimen (kestää 30–60 sekuntia).</p>
+  <button id="refreshBtn">Refresh</button>
+</div>
+
+<div class="device">
+  <div class="eyebrow">
+    <span class="dot"></span>Pukku Pankki
+    <a href="/" class="back">← Takaisin</a>
+  </div>
+
+  <div id="payView">
+    <div class="id-row">
+      <label>Vastaanottajan ID</label>
+      <input type="number" id="toId" placeholder="esim. 2" min="1">
+      <div class="receiver-name" id="receiverName"></div>
+    </div>
+
+    <div class="amount-wrap">
+      <div class="currency-row">
+        <span class="amount placeholder" id="amountDisplay">0,00</span>
+        <span class="currency">pukku</span>
+      </div>
+      <div class="amount-label">Syötä summa</div>
+    </div>
+
+    <div class="keypad" id="keypad">
+      <button class="key" data-k="1">1</button>
+      <button class="key" data-k="2">2</button>
+      <button class="key" data-k="3">3</button>
+      <button class="key" data-k="4">4</button>
+      <button class="key" data-k="5">5</button>
+      <button class="key" data-k="6">6</button>
+      <button class="key" data-k="7">7</button>
+      <button class="key" data-k="8">8</button>
+      <button class="key" data-k="9">9</button>
+      <button class="key func" data-k="clear">Tyhjennä</button>
+      <button class="key" data-k="0">0</button>
+      <button class="key func" data-k="back">⌫</button>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <button class="pay-btn" id="payBtn" disabled>
+      <span class="spinner"></span>
+      <span id="payLabel">Siirrä</span>
+    </button>
+  </div>
+
+  <div id="successView">
+    <div style="font-size:64px">✓</div>
+    <div class="accepted-title">Siirto onnistui!</div>
+    <div class="accepted-sub">Pukut siirretty</div>
+    <div class="accepted-amount" id="successAmount">0,00 pukku</div>
+    <button class="new-payment" id="newPayment">Uusi siirto</button>
+    <br>
+    <a href="/" style="font-size:13px;color:var(--muted);margin-top:12px;display:inline-block">← Takaisin dashboardiin</a>
+  </div>
+</div>
+
+<script>
+  const overlay = document.getElementById('sleepOverlay');
+
+  document.getElementById('refreshBtn').onclick = () => {
+    overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
+    fetch('/api/health').catch(()=>{});
+    setTimeout(() => location.reload(), 5000);
+  };
+
+  // Auth + server check
+  fetch('/api/me', {credentials:'include'})
+    .then(r => {
+      if (r.status === 401) location.href = 'login.html';
+    })
+    .catch(() => {
+      overlay.style.display = 'flex';
+    });
+
+  let cents = 0;
+  const amountDisplay = document.getElementById('amountDisplay');
+  const payBtn = document.getElementById('payBtn');
+  const payLabel = document.getElementById('payLabel');
+  const toIdInput = document.getElementById('toId');
+  const receiverName = document.getElementById('receiverName');
+  const errorBox = document.getElementById('errorBox');
+
+  function formatCents(c){
+    return (c/100).toLocaleString('fi-FI',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+
+  function render(){
+    amountDisplay.textContent = formatCents(cents);
+    amountDisplay.classList.toggle('placeholder', cents === 0);
+    updateBtn();
+  }
+
+  function updateBtn(){
+    payBtn.disabled = cents === 0 || !toIdInput.value;
+  }
+
+  // Tarkista vastaanottaja ID:llä
+  let checkTimer;
+  toIdInput.addEventListener('input', () => {
+    updateBtn();
+    receiverName.textContent = '';
+    clearTimeout(checkTimer);
+    const id = toIdInput.value;
+    if (!id) return;
+    checkTimer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/user/' + id, {credentials:'include'});
+        if (res.ok) {
+          const u = await res.json();
+          receiverName.textContent = u.username;
+        } else {
+          receiverName.textContent = 'Käyttäjää ei löydy';
+        }
+      } catch {
+        overlay.style.display = 'flex';
+      }
+    }, 400);
+  });
+
+  document.getElementById('keypad').addEventListener('click', (e) => {
+    const btn = e.target.closest('.key');
+    if (!btn) return;
+    const k = btn.dataset.k;
+    if (k === 'clear') cents = 0;
+    else if (k === 'back') cents = Math.floor(cents / 10);
+    else if (cents < 99999999) cents = cents * 10 + parseInt(k, 10);
+    render();
+  });
+
+  payBtn.addEventListener('click', async () => {
+    if (payBtn.disabled) return;
+    errorBox.style.display = 'none';
+    payBtn.classList.add('loading');
+    payLabel.textContent = 'Käsitellään…';
+    payBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/transfer', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+        body: JSON.stringify({
+          toId: toIdInput.value,
+          amount: cents / 100
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('successAmount').textContent = formatCents(cents) + ' pukku';
+        document.getElementById('payView').style.display = 'none';
+        document.getElementById('successView').style.display = 'flex';
+      } else {
+        errorBox.textContent = data.error || 'Siirto epäonnistui';
+        errorBox.style.display = 'block';
+        payBtn.classList.remove('loading');
+        payLabel.textContent = 'Siirrä';
+        updateBtn();
+      }
+    } catch {
+      overlay.style.display = 'flex';
+    }
+  });
+
+  document.getElementById('newPayment').onclick = () => {
+    cents = 0;
+    toIdInput.value = '';
+    receiverName.textContent = '';
+    render();
+    payBtn.classList.remove('loading');
+    payLabel.textContent = 'Siirrä';
+    document.getElementById('successView').style.display = 'none';
+    document.getElementById('payView').style.display = 'flex';
+  };
+
+  render();
+</script>
+</body>
+</html>
