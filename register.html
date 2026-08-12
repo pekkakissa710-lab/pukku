@@ -1,151 +1,391 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rekisteröidy — Pukku Pankki</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root{--ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;--blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);--text:#10182B;--muted:#7C879E;--error:#EF4444}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);font-family:Inter,sans-serif;color:var(--text)}
-    .card{width:100%;max-width:400px;background:var(--panel);border-radius:24px;padding:32px 28px;border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(16,24,40,.15)}
-    .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:20px}
-    .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
-    h1{font-family:'Space Grotesk',sans-serif;font-size:26px;margin:0 0 8px}
-    .muted{color:var(--muted);font-size:14px;margin-bottom:24px}
-    label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--muted)}
-    input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;background:#F6F8FC;margin-bottom:14px;font-family:inherit;transition:all 0.2s}
-    input:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-glow)}
-    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;transition:all 0.2s}
-    .btn:hover{box-shadow:0 8px 20px var(--blue-glow)}
-    .btn:disabled{opacity:0.5;cursor:not-allowed}
-    .error-popup{position:fixed;bottom:20px;right:20px;background:var(--error);color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;max-width:300px;box-shadow:0 10px 30px rgba(239,68,68,.3);animation:slideIn 0.3s ease;z-index:10000}
-    .success-popup{position:fixed;bottom:20px;right:20px;background:#10B981;color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;max-width:300px;box-shadow:0 10px 30px rgba(16,185,129,.3);animation:slideIn 0.3s ease;z-index:10000}
-    @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
-    @keyframes slideOut{to{transform:translateX(400px);opacity:0}}
-    .popup.removing{animation:slideOut 0.3s ease}
-    a{color:var(--blue);text-decoration:none}
-    .footer{text-align:center;margin-top:20px;font-size:14px}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luo tili — Pukku</title>
 
-    #sleepOverlay{
-      position:fixed;inset:0;z-index:9999;background:#0f172a;
-      display:none;flex-direction:column;align-items:center;justify-content:center;
-      color:#fff;text-align:center;padding:32px;font-family:'Space Grotesk',sans-serif;
-    }
-    #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
-    #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
-    #sleepOverlay button{
-      padding:14px 28px;border:none;border-radius:14px;
-      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);color:#fff;
-      font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;
-    }
-  </style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#eef2fa;
+  --card:#fff;
+  --text:#10182b;
+  --muted:#7c879e;
+  --line:rgba(16,24,40,.09);
+  --blue:#3e7bfa;
+  --blue2:#2a5fe0;
+  --red:#ef4444;
+  --green:#10b981;
+}
+
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:
+    radial-gradient(900px 500px at 50% -100px,rgba(62,123,250,.14),transparent 65%),
+    var(--bg);
+  font-family:Inter,sans-serif;
+  color:var(--text);
+}
+
+.card{
+  width:100%;
+  max-width:430px;
+  padding:34px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:28px;
+  box-shadow:0 30px 80px -35px rgba(16,24,40,.25);
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 14px rgba(62,123,250,.55);
+}
+
+h1{
+  margin:24px 0 8px;
+  font:700 30px "Space Grotesk",sans-serif;
+  letter-spacing:-.03em;
+}
+
+.subtitle{
+  margin:0 0 28px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.5;
+}
+
+.reward{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:22px;
+  padding:14px;
+  border-radius:15px;
+  background:rgba(62,123,250,.07);
+  color:var(--blue);
+  font-size:13px;
+  font-weight:600;
+}
+
+.reward-icon{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:10px;
+  background:rgba(62,123,250,.12);
+}
+
+label{
+  display:block;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:600;
+}
+
+input{
+  width:100%;
+  padding:14px 15px;
+  margin-bottom:17px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#f6f8fc;
+  color:var(--text);
+  font:15px Inter,sans-serif;
+  transition:.2s;
+}
+
+input:focus{
+  outline:0;
+  border-color:var(--blue);
+  background:#fff;
+  box-shadow:0 0 0 4px rgba(62,123,250,.1);
+}
+
+.hint{
+  margin:-8px 0 17px;
+  color:var(--muted);
+  font-size:11px;
+}
+
+button{
+  width:100%;
+  border:0;
+  border-radius:15px;
+  padding:15px;
+  color:white;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  font:600 16px "Space Grotesk",sans-serif;
+  cursor:pointer;
+  box-shadow:0 14px 30px -15px rgba(62,123,250,.7);
+}
+
+button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+.footer{
+  margin:22px 0 0;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+
+a{
+  color:var(--blue);
+  text-decoration:none;
+  font-weight:600;
+}
+
+.toast{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  max-width:320px;
+  padding:14px 18px;
+  border-radius:14px;
+  color:white;
+  font-size:14px;
+  z-index:20;
+}
+
+.toast.error{
+  background:var(--red);
+}
+
+.toast.success{
+  background:var(--green);
+}
+
+#sleepOverlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:30px;
+  background:#0f172a;
+  color:#fff;
+  text-align:center;
+  z-index:999;
+}
+
+#sleepOverlay h2{
+  font:700 30px "Space Grotesk",sans-serif;
+  margin:0 0 10px;
+}
+
+#sleepOverlay p{
+  max-width:340px;
+  color:#94a3b8;
+  line-height:1.5;
+}
+
+#refreshBtn{
+  width:auto;
+  padding:13px 24px;
+}
+</style>
 </head>
+
 <body>
-  <div id="sleepOverlay">
-    <h1>SERVER IS SLEEPING</h1>
-    <p>Render free-tier nukkuu. Paina nappia herättääksesi palvelimen (kestää 30–60 sekuntia).</p>
-    <button id="refreshBtn">Refresh</button>
+
+<div id="sleepOverlay">
+  <h2>SERVER IS SLEEPING</h2>
+  <p>Render-palvelin nukkuu.</p>
+  <button id="refreshBtn">Yritä uudelleen</button>
+</div>
+
+<main class="card">
+
+  <div class="brand">
+    <span class="dot"></span>
+    Pukku Pankki
   </div>
 
-  <div class="card">
-    <div class="eyebrow"><span class="dot"></span>Pukku Pankki</div>
-    <h1>Luo tili</h1>
-    <p class="muted">Aloita 50,00 pukulla!</p>
-    <form id="form">
-      <label>Käyttäjänimi (min 3 merkkiä)</label>
-      <input type="text" id="username" required minlength="3" autocomplete="username" autofocus>
-      <label>Salasana (min 6 merkkiä)</label>
-      <input type="password" id="password" required minlength="6" autocomplete="new-password">
-      <button type="submit" class="btn" id="submitBtn">Luo tili</button>
-    </form>
-    <p class="footer">Onko jo tili? <a href="login.html">Kirjaudu</a></p>
+  <h1>Luo Pukku-tili.</h1>
+
+  <p class="subtitle">
+    Tee oma tili ja saat heti prototype-valuuttaa käyttöösi.
+  </p>
+
+  <div class="reward">
+    <span class="reward-icon">✦</span>
+    Saat rekisteröityessäsi <strong>50,00 pukku</strong>
   </div>
 
-  <script>
-    const overlay = document.getElementById('sleepOverlay');
+  <form id="form">
 
-    function showPopup(message, type = 'error') {
-      const popup = document.createElement('div');
-      popup.className = type === 'error' ? 'error-popup' : 'success-popup';
-      popup.textContent = message;
-      document.body.appendChild(popup);
-      
-      setTimeout(() => {
-        popup.classList.add('removing');
-        setTimeout(() => popup.remove(), 300);
-      }, 4000);
+    <label for="username">Käyttäjänimi</label>
+
+    <input
+      id="username"
+      type="text"
+      minlength="3"
+      maxlength="24"
+      autocomplete="username"
+      required
+      autofocus
+    >
+
+    <div class="hint">
+      3–24 merkkiä · a-z · 0-9 · _
+    </div>
+
+    <label for="password">Salasana</label>
+
+    <input
+      id="password"
+      type="password"
+      minlength="6"
+      maxlength="128"
+      autocomplete="new-password"
+      required
+    >
+
+    <button id="submitBtn" type="submit">
+      Luo tili
+    </button>
+
+  </form>
+
+  <p class="footer">
+    Onko jo tili?
+    <a href="/login.html">Kirjaudu sisään</a>
+  </p>
+
+</main>
+
+<script>
+const overlay = document.getElementById("sleepOverlay");
+
+function toast(message, type = "error") {
+  const el = document.createElement("div");
+
+  el.className = `toast ${type}`;
+  el.textContent = message;
+
+  document.body.appendChild(el);
+
+  setTimeout(() => el.remove(), 3500);
+}
+
+async function request(url, options = {}, timeout = 7000) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      credentials: "include"
+    });
+
+    clearTimeout(timer);
+
+    return response;
+  } catch (error) {
+    clearTimeout(timer);
+    throw error;
+  }
+}
+
+async function checkServer() {
+  try {
+    await request("/api/health", {}, 5000);
+    overlay.style.display = "none";
+  } catch {
+    overlay.style.display = "flex";
+  }
+}
+
+document.getElementById("refreshBtn").onclick = () => {
+  location.reload();
+};
+
+checkServer();
+
+document.getElementById("form").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const button = document.getElementById("submitBtn");
+
+  button.disabled = true;
+  button.textContent = "Luodaan tili…";
+
+  try {
+    const response = await request("/api/register", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        username:document.getElementById("username").value,
+        password:document.getElementById("password").value
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      toast(data.error || "Rekisteröinti epäonnistui");
+
+      button.disabled = false;
+      button.textContent = "Luo tili";
+
+      return;
     }
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      
-      try {
-        const response = await fetch(url, {
-          ...options,
-          signal: controller.signal,
-          credentials: 'include'
-        });
-        clearTimeout(timeoutId);
-        return response;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        throw err;
-      }
+    toast("Tili luotu!", "success");
+
+    setTimeout(() => {
+      location.href = "/login.html";
+    }, 500);
+
+  } catch (error) {
+    if (error.name === "AbortError" || error instanceof TypeError) {
+      overlay.style.display = "flex";
+    } else {
+      toast("Verkkovirhe");
     }
 
-    async function checkServer() {
-      try {
-        await fetchWithTimeout('/api/health', {}, 5000);
-        overlay.style.display = 'none';
-      } catch (err) {
-        if (err.name === 'AbortError' || err instanceof TypeError) {
-          overlay.style.display = 'flex';
-        }
-      }
-    }
+    button.disabled = false;
+    button.textContent = "Luo tili";
+  }
+});
+</script>
 
-    document.getElementById('refreshBtn').onclick = () => {
-      overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
-      fetchWithTimeout('/api/health', {}, 6000).catch(() => {});
-      setTimeout(() => location.reload(), 4000);
-    };
-
-    checkServer();
-
-    document.getElementById('form').onsubmit = async (e) => {
-      e.preventDefault();
-      const submitBtn = document.getElementById('submitBtn');
-      submitBtn.disabled = true;
-
-      try {
-        const res = await fetchWithTimeout('/api/register', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value
-          })
-        }, 5000);
-
-        const data = await res.json();
-        if (data.success) {
-          showPopup('Tili luotu! Kirjaudutaan sisään...', 'success');
-          setTimeout(() => location.href = 'login.html', 500);
-        } else {
-          showPopup(data.error || 'Rekisteröinti epäonnistui');
-          submitBtn.disabled = false;
-        }
-      } catch (err) {
-        if (err.name === 'AbortError' || err instanceof TypeError) {
-          overlay.style.display = 'flex';
-        } else {
-          showPopup('Verkkovirhe, yritä uudelleen');
-        }
-        submitBtn.disabled = false;
-      }
-    };
-  </script>
 </body>
 </html>
