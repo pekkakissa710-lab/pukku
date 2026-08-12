@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Pukku Pankki{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #EEF2FA;
+      --panel: #FFFFFF;
+      --blue: #3E7BFA;
+      --blue-soft: #2A5FE0;
+      --blue-glow: rgba(62,123,250,0.28);
+      --line: rgba(16,24,40,0.09);
+      --text: #10182B;
+      --muted: #7C879E;
+      --success: #10B981;
+      --error: #EF4444;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(62,123,250,0.08), transparent 60%),
+        var(--ink);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      padding: 24px;
+    }
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--panel);
+      border-radius: 24px;
+      padding: 28px 24px;
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 50px -20px rgba(16,24,40,0.15);
+    }
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--blue);
+      box-shadow: 0 0 8px var(--blue-glow);
+    }
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+    .muted { color: var(--muted); font-size: 14px; }
+    .flash {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+    .flash.success { background: rgba(16,185,129,0.12); color: #047857; border: 1px solid rgba(16,185,129,0.3); }
+    .flash.error { background: rgba(239,68,68,0.1); color: #B91C1C; border: 1px solid rgba(239,68,68,0.25); }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 15px;
+      font-family: inherit;
+      background: #F6F8FC;
+      margin-bottom: 14px;
+      transition: border-color .15s;
+    }
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--blue);
+      background: #fff;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .1s, opacity .2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--blue), var(--blue-soft));
+      color: white;
+      box-shadow: 0 10px 25px -8px var(--blue-glow);
+    }
+    .btn-primary:active { transform: scale(0.98); }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .balance-big {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 8px 0 4px;
+    }
+    .tx-list { margin-top: 24px; }
+    .tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 14px;
+    }
+    .tx-item:last-child { border-bottom: none; }
+    .tx-amount.out { color: var(--error); }
+    .tx-amount.in { color: var(--success); }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .nav a { font-size: 13px; color: var(--muted); }
+  </style>
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
