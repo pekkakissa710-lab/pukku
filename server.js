@@ -1,6 +1,7 @@
 const express = require("express");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
+const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 
@@ -14,91 +15,218 @@ if (!SESSION_SECRET) {
   process.exit(1);
 }
 
+/*
+|--------------------------------------------------------------------------
+| CORS
+|--------------------------------------------------------------------------
+*/
+
+const allowedOrigins = [
+  "https://pukku.my.to",
+  "https://www.pukku.my.to",
+  "https://pukku-1.onrender.com"
+];
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(
+        new Error("CORS origin not allowed")
+      );
+    },
+    credentials: true,
+    methods: [
+      "GET",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS"
+    ],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization"
+    ]
+  })
+);
+
+app.options("*", cors());
+
+/*
+|--------------------------------------------------------------------------
+| Data
+|--------------------------------------------------------------------------
+*/
+
 const DATA_DIR = path.join(__dirname, "data");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
-const TRANSACTIONS_FILE = path.join(DATA_DIR, "transactions.json");
+
+const USERS_FILE =
+  path.join(DATA_DIR, "users.json");
+
+const TRANSACTIONS_FILE =
+  path.join(DATA_DIR, "transactions.json");
 
 if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(DATA_DIR, {
+    recursive: true
+  });
 }
 
-function loadJSON(file, fallback = []) {
+function loadJSON(file, fallback) {
   try {
-    if (!fs.existsSync(file)) return fallback;
+    if (!fs.existsSync(file)) {
+      return fallback;
+    }
 
-    const raw = fs.readFileSync(file, "utf8");
+    const raw =
+      fs.readFileSync(file, "utf8");
 
-    if (!raw.trim()) return fallback;
+    if (!raw.trim()) {
+      return fallback;
+    }
 
-    return JSON.parse(raw);
+    const parsed =
+      JSON.parse(raw);
+
+    return parsed;
   } catch (error) {
-    console.error(`Failed to load ${file}:`, error.message);
+    console.error(
+      `Failed to load ${file}:`,
+      error.message
+    );
+
     return fallback;
   }
 }
 
 function saveJSON(file, data) {
-  const tempFile = `${file}.tmp`;
+  const temporary =
+    `${file}.tmp`;
 
   fs.writeFileSync(
-    tempFile,
+    temporary,
     JSON.stringify(data, null, 2),
     "utf8"
   );
 
-  fs.renameSync(tempFile, file);
+  fs.renameSync(
+    temporary,
+    file
+  );
 }
 
-let users = loadJSON(USERS_FILE, []);
-let transactions = loadJSON(TRANSACTIONS_FILE, []);
+let users =
+  loadJSON(USERS_FILE, []);
 
-if (!Array.isArray(users)) users = [];
-if (!Array.isArray(transactions)) transactions = [];
+let transactions =
+  loadJSON(
+    TRANSACTIONS_FILE,
+    []
+  );
+
+if (!Array.isArray(users)) {
+  users = [];
+}
+
+if (!Array.isArray(transactions)) {
+  transactions = [];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Prototype users
+|--------------------------------------------------------------------------
+*/
 
 if (users.length === 0) {
   users = [
     {
       id: 1,
       username: "alice",
-      password_hash: bcrypt.hashSync("alice123", 10),
+      password_hash:
+        bcrypt.hashSync(
+          "alice123",
+          10
+        ),
       balance: 10000,
-      created_at: new Date().toISOString()
+      created_at:
+        new Date().toISOString()
     },
     {
       id: 2,
       username: "bob",
-      password_hash: bcrypt.hashSync("bob123", 10),
+      password_hash:
+        bcrypt.hashSync(
+          "bob123",
+          10
+        ),
       balance: 10000,
-      created_at: new Date().toISOString()
+      created_at:
+        new Date().toISOString()
     },
     {
       id: 3,
       username: "carol",
-      password_hash: bcrypt.hashSync("carol123", 10),
+      password_hash:
+        bcrypt.hashSync(
+          "carol123",
+          10
+        ),
       balance: 10000,
-      created_at: new Date().toISOString()
+      created_at:
+        new Date().toISOString()
     }
   ];
 
-  saveJSON(USERS_FILE, users);
+  saveJSON(
+    USERS_FILE,
+    users
+  );
 
-  console.log("Prototype demo users created");
+  console.log(
+    "Prototype demo users created"
+  );
 }
 
 let nextUserId =
   users.reduce(
-    (max, user) => Math.max(max, Number(user.id) || 0),
+    (max, user) =>
+      Math.max(
+        max,
+        Number(user.id) || 0
+      ),
     0
   ) + 1;
 
 let nextTransactionId =
   transactions.reduce(
     (max, transaction) =>
-      Math.max(max, Number(transaction.id) || 0),
+      Math.max(
+        max,
+        Number(transaction.id) || 0
+      ),
     0
   ) + 1;
 
-app.use(express.json({ limit: "32kb" }));
+/*
+|--------------------------------------------------------------------------
+| Middleware
+|--------------------------------------------------------------------------
+*/
+
+app.use(
+  express.json({
+    limit: "32kb"
+  })
+);
 
 app.use(
   express.urlencoded({
@@ -107,383 +235,796 @@ app.use(
   })
 );
 
-const isProduction = process.env.NODE_ENV === "production";
+app.set(
+  "trust proxy",
+  1
+);
 
-app.set("trust proxy", 1);
+const isProduction =
+  process.env.NODE_ENV ===
+  "production";
+
+/*
+|--------------------------------------------------------------------------
+| Sessions
+|--------------------------------------------------------------------------
+|
+| GitHub Pages and Render are different sites.
+| Therefore the cookie must be SameSite=None
+| and Secure.
+|
+*/
 
 app.use(
   session({
-    secret: SESSION_SECRET,
+    name: "pukku.sid",
+
+    secret:
+      SESSION_SECRET,
+
     resave: false,
+
     saveUninitialized: false,
 
+    proxy: true,
+
     cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "lax",
-      secure: isProduction
+
+      secure: true,
+
+      sameSite: "none",
+
+      maxAge:
+        7 * 24 * 60 * 60 * 1000
     }
   })
 );
 
-app.use(
-  express.static(__dirname, {
-    extensions: ["html"]
-  })
-);
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
 
 function formatPukku(cents) {
   return (
-    (cents / 100).toLocaleString("fi-FI", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }) + " pukku"
+    (
+      cents / 100
+    ).toLocaleString(
+      "fi-FI",
+      {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }
+    ) + " pukku"
   );
 }
 
-function requireAuth(req, res, next) {
+function requireAuth(
+  req,
+  res,
+  next
+) {
   if (!req.session.userId) {
-    return res.status(401).json({
-      error: "Kirjaudu sisään"
-    });
+    return res
+      .status(401)
+      .json({
+        error:
+          "Kirjaudu sisään"
+      });
   }
 
   next();
 }
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    time: new Date().toISOString()
-  });
-});
+/*
+|--------------------------------------------------------------------------
+| Health
+|--------------------------------------------------------------------------
+*/
 
-app.post("/api/register", (req, res) => {
-  const username = String(req.body.username || "")
-    .trim()
-    .toLowerCase();
-
-  const password = String(req.body.password || "");
-
-  if (!/^[a-z0-9_]{3,24}$/.test(username)) {
-    return res.status(400).json({
-      error:
-        "Käyttäjänimi: 3–24 merkkiä, vain a-z, 0-9 ja _"
+app.get(
+  "/api/health",
+  (req, res) => {
+    res.json({
+      status: "ok",
+      time:
+        new Date().toISOString()
     });
   }
+);
 
-  if (password.length < 6 || password.length > 128) {
-    return res.status(400).json({
-      error: "Salasanan pitää olla 6–128 merkkiä"
-    });
-  }
+/*
+|--------------------------------------------------------------------------
+| Register
+|--------------------------------------------------------------------------
+*/
 
-  if (users.some(user => user.username === username)) {
-    return res.status(400).json({
-      error: "Käyttäjänimi on jo käytössä"
-    });
-  }
+app.post(
+  "/api/register",
+  (req, res) => {
+    const username =
+      String(
+        req.body.username || ""
+      )
+        .trim()
+        .toLowerCase();
 
-  const user = {
-    id: nextUserId++,
-    username,
-    password_hash: bcrypt.hashSync(password, 10),
-    balance: 5000,
-    created_at: new Date().toISOString()
-  };
+    const password =
+      String(
+        req.body.password || ""
+      );
 
-  users.push(user);
+    if (
+      !/^[a-z0-9_]{3,24}$/.test(
+        username
+      )
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Käyttäjänimi: 3–24 merkkiä, vain a-z, 0-9 ja _"
+        });
+    }
 
-  try {
-    saveJSON(USERS_FILE, users);
-  } catch (error) {
-    console.error("Failed to save user:", error.message);
+    if (
+      password.length < 6 ||
+      password.length > 128
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Salasanan pitää olla 6–128 merkkiä"
+        });
+    }
 
-    users.pop();
-    nextUserId--;
+    if (
+      users.some(
+        user =>
+          user.username ===
+          username
+      )
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Käyttäjänimi on jo käytössä"
+        });
+    }
 
-    return res.status(500).json({
-      error: "Tilin tallentaminen epäonnistui"
-    });
-  }
+    const user = {
+      id:
+        nextUserId++,
 
-  res.json({
-    success: true,
-    message: "Tili luotu!"
-  });
-});
+      username,
 
-app.post("/api/login", (req, res) => {
-  const username = String(req.body.username || "")
-    .trim()
-    .toLowerCase();
+      password_hash:
+        bcrypt.hashSync(
+          password,
+          10
+        ),
 
-  const password = String(req.body.password || "");
+      balance: 5000,
 
-  if (!username || !password) {
-    return res.status(400).json({
-      error: "Käyttäjänimi ja salasana vaaditaan"
-    });
-  }
+      created_at:
+        new Date().toISOString()
+    };
 
-  const user = users.find(
-    item => item.username === username
-  );
+    users.push(user);
 
-  if (
-    !user ||
-    !bcrypt.compareSync(password, user.password_hash)
-  ) {
-    return res.status(401).json({
-      error: "Virheellinen käyttäjänimi tai salasana"
-    });
-  }
-
-  req.session.regenerate(error => {
-    if (error) {
+    try {
+      saveJSON(
+        USERS_FILE,
+        users
+      );
+    } catch (error) {
       console.error(
-        "Session regeneration error:",
+        "Failed to save user:",
         error.message
       );
 
-      return res.status(500).json({
-        error: "Istunnon luominen epäonnistui"
-      });
-    }
+      users.pop();
+      nextUserId--;
 
-    req.session.userId = user.id;
-    req.session.username = user.username;
+      return res
+        .status(500)
+        .json({
+          error:
+            "Tilin tallentaminen epäonnistui"
+        });
+    }
 
     res.json({
       success: true,
-      username: user.username,
-      id: user.id
+      message:
+        "Tili luotu!"
     });
-  });
-});
+  }
+);
 
-app.post("/api/logout", (req, res) => {
-  req.session.destroy(error => {
-    if (error) {
-      console.error("Logout error:", error.message);
+/*
+|--------------------------------------------------------------------------
+| Login
+|--------------------------------------------------------------------------
+*/
+
+app.post(
+  "/api/login",
+  (req, res) => {
+    const username =
+      String(
+        req.body.username || ""
+      )
+        .trim()
+        .toLowerCase();
+
+    const password =
+      String(
+        req.body.password || ""
+      );
+
+    if (
+      !username ||
+      !password
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Käyttäjänimi ja salasana vaaditaan"
+        });
     }
 
-    res.clearCookie("connect.sid");
+    const user =
+      users.find(
+        item =>
+          item.username ===
+          username
+      );
+
+    if (
+      !user ||
+      !bcrypt.compareSync(
+        password,
+        user.password_hash
+      )
+    ) {
+      return res
+        .status(401)
+        .json({
+          error:
+            "Virheellinen käyttäjänimi tai salasana"
+        });
+    }
+
+    req.session.regenerate(
+      error => {
+        if (error) {
+          console.error(
+            "Session regeneration error:",
+            error.message
+          );
+
+          return res
+            .status(500)
+            .json({
+              error:
+                "Istunnon luominen epäonnistui"
+            });
+        }
+
+        req.session.userId =
+          user.id;
+
+        req.session.username =
+          user.username;
+
+        req.session.save(
+          saveError => {
+            if (saveError) {
+              console.error(
+                "Session save error:",
+                saveError.message
+              );
+
+              return res
+                .status(500)
+                .json({
+                  error:
+                    "Istunnon tallentaminen epäonnistui"
+                });
+            }
+
+            res.json({
+              success: true,
+              username:
+                user.username,
+              id:
+                user.id
+            });
+          }
+        );
+      }
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Logout
+|--------------------------------------------------------------------------
+*/
+
+app.post(
+  "/api/logout",
+  (req, res) => {
+    req.session.destroy(
+      error => {
+        if (error) {
+          console.error(
+            "Logout error:",
+            error.message
+          );
+        }
+
+        res.clearCookie(
+          "pukku.sid",
+          {
+            httpOnly: true,
+            secure: true,
+            sameSite: "none"
+          }
+        );
+
+        res.json({
+          success: true
+        });
+      }
+    );
+  }
+);
+
+/*
+|--------------------------------------------------------------------------
+| Current user
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  "/api/me",
+  requireAuth,
+  (req, res) => {
+    const user =
+      users.find(
+        item =>
+          item.id ===
+          req.session.userId
+      );
+
+    if (!user) {
+      return req.session.destroy(
+        () => {
+          res
+            .status(401)
+            .json({
+              error:
+                "Kirjaudu sisään"
+            });
+        }
+      );
+    }
 
     res.json({
-      success: true
-    });
-  });
-});
-
-app.get("/api/me", requireAuth, (req, res) => {
-  const user = users.find(
-    item => item.id === req.session.userId
-  );
-
-  if (!user) {
-    req.session.destroy(() => {});
-
-    return res.status(401).json({
-      error: "Kirjaudu sisään"
+      id: user.id,
+      username:
+        user.username,
+      balance:
+        user.balance,
+      balanceStr:
+        formatPukku(
+          user.balance
+        )
     });
   }
+);
 
-  res.json({
-    id: user.id,
-    username: user.username,
-    balance: user.balance,
-    balanceStr: formatPukku(user.balance)
-  });
-});
+/*
+|--------------------------------------------------------------------------
+| User lookup
+|--------------------------------------------------------------------------
+*/
 
-app.get("/api/user/:id", requireAuth, (req, res) => {
-  const id = Number.parseInt(req.params.id, 10);
-
-  if (!Number.isSafeInteger(id) || id < 1) {
-    return res.status(400).json({
-      error: "Virheellinen käyttäjä-ID"
-    });
-  }
-
-  const user = users.find(item => item.id === id);
-
-  if (!user) {
-    return res.status(404).json({
-      error: "Käyttäjää ei löydy"
-    });
-  }
-
-  res.json({
-    id: user.id,
-    username: user.username
-  });
-});
-
-app.get("/api/transactions", requireAuth, (req, res) => {
-  const myId = req.session.userId;
-
-  const result = transactions
-    .filter(
-      transaction =>
-        transaction.from_user === myId ||
-        transaction.to_user === myId
-    )
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() -
-        new Date(a.created_at).getTime()
-    )
-    .slice(0, 30)
-    .map(transaction => {
-      const fromUser = users.find(
-        user => user.id === transaction.from_user
+app.get(
+  "/api/user/:id",
+  requireAuth,
+  (req, res) => {
+    const id =
+      Number.parseInt(
+        req.params.id,
+        10
       );
 
-      const toUser = users.find(
-        user => user.id === transaction.to_user
+    if (
+      !Number.isSafeInteger(id) ||
+      id < 1
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Virheellinen käyttäjä-ID"
+        });
+    }
+
+    const user =
+      users.find(
+        item =>
+          item.id === id
       );
 
-      return {
-        id: transaction.id,
-        from_user: transaction.from_user,
-        to_user: transaction.to_user,
-        from_name: fromUser
-          ? fromUser.username
-          : null,
-        to_name: toUser
-          ? toUser.username
-          : null,
-        amount: transaction.amount,
-        amountStr: formatPukku(transaction.amount),
-        note: transaction.note,
-        created_at: transaction.created_at,
-        isOut: transaction.from_user === myId
-      };
-    });
+    if (!user) {
+      return res
+        .status(404)
+        .json({
+          error:
+            "Käyttäjää ei löydy"
+        });
+    }
 
-  res.json(result);
-});
-
-app.post("/api/transfer", requireAuth, (req, res) => {
-  const toId = Number.parseInt(req.body.toId, 10);
-
-  const rawAmount = String(
-    req.body.amount ?? ""
-  ).replace(",", ".");
-
-  const amount = Number(rawAmount);
-
-  const note = String(req.body.note || "")
-    .trim()
-    .slice(0, 100);
-
-  if (!Number.isSafeInteger(toId) || toId < 1) {
-    return res.status(400).json({
-      error: "Vastaanottajan ID puuttuu"
+    res.json({
+      id: user.id,
+      username:
+        user.username
     });
   }
+);
 
-  if (
-    !Number.isFinite(amount) ||
-    amount <= 0 ||
-    amount > 999999.99
-  ) {
-    return res.status(400).json({
-      error: "Virheellinen summa"
-    });
+/*
+|--------------------------------------------------------------------------
+| Transactions
+|--------------------------------------------------------------------------
+*/
+
+app.get(
+  "/api/transactions",
+  requireAuth,
+  (req, res) => {
+    const myId =
+      req.session.userId;
+
+    const result =
+      transactions
+        .filter(
+          transaction =>
+            transaction.from_user ===
+              myId ||
+            transaction.to_user ===
+              myId
+        )
+        .sort(
+          (a, b) =>
+            new Date(
+              b.created_at
+            ).getTime() -
+            new Date(
+              a.created_at
+            ).getTime()
+        )
+        .slice(0, 30)
+        .map(
+          transaction => {
+            const fromUser =
+              users.find(
+                user =>
+                  user.id ===
+                  transaction.from_user
+              );
+
+            const toUser =
+              users.find(
+                user =>
+                  user.id ===
+                  transaction.to_user
+              );
+
+            return {
+              id:
+                transaction.id,
+
+              from_user:
+                transaction.from_user,
+
+              to_user:
+                transaction.to_user,
+
+              from_name:
+                fromUser
+                  ? fromUser.username
+                  : null,
+
+              to_name:
+                toUser
+                  ? toUser.username
+                  : null,
+
+              amount:
+                transaction.amount,
+
+              amountStr:
+                formatPukku(
+                  transaction.amount
+                ),
+
+              note:
+                transaction.note,
+
+              created_at:
+                transaction.created_at,
+
+              isOut:
+                transaction.from_user ===
+                myId
+            };
+          }
+        );
+
+    res.json(result);
   }
+);
 
-  const cents = Math.round(amount * 100);
+/*
+|--------------------------------------------------------------------------
+| Transfer
+|--------------------------------------------------------------------------
+*/
 
-  if (!Number.isSafeInteger(cents) || cents < 1) {
-    return res.status(400).json({
-      error: "Virheellinen summa"
-    });
-  }
+app.post(
+  "/api/transfer",
+  requireAuth,
+  (req, res) => {
+    const toId =
+      Number.parseInt(
+        req.body.toId,
+        10
+      );
 
-  const sender = users.find(
-    user => user.id === req.session.userId
-  );
+    const rawAmount =
+      String(
+        req.body.amount ?? ""
+      ).replace(
+        ",",
+        "."
+      );
 
-  const receiver = users.find(
-    user => user.id === toId
-  );
+    const amount =
+      Number(rawAmount);
 
-  if (!sender) {
-    return res.status(401).json({
-      error: "Kirjaudu sisään"
-    });
-  }
+    const note =
+      String(
+        req.body.note || ""
+      )
+        .trim()
+        .slice(0, 100);
 
-  if (!receiver) {
-    return res.status(400).json({
-      error: "Vastaanottajaa ei löydy"
-    });
-  }
+    if (
+      !Number.isSafeInteger(
+        toId
+      ) ||
+      toId < 1
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Vastaanottajan ID puuttuu"
+        });
+    }
 
-  if (receiver.id === sender.id) {
-    return res.status(400).json({
-      error: "Et voi lähettää itsellesi"
-    });
-  }
+    if (
+      !Number.isFinite(
+        amount
+      ) ||
+      amount <= 0 ||
+      amount > 999999.99
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Virheellinen summa"
+        });
+    }
 
-  if (sender.balance < cents) {
-    return res.status(400).json({
-      error: "Saldo ei riitä"
-    });
-  }
+    const cents =
+      Math.round(
+        amount * 100
+      );
 
-  sender.balance -= cents;
-  receiver.balance += cents;
+    if (
+      !Number.isSafeInteger(
+        cents
+      ) ||
+      cents < 1
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Virheellinen summa"
+        });
+    }
 
-  const transaction = {
-    id: nextTransactionId++,
-    from_user: sender.id,
-    to_user: receiver.id,
-    amount: cents,
-    note: note || null,
-    created_at: new Date().toISOString()
-  };
+    const sender =
+      users.find(
+        user =>
+          user.id ===
+          req.session.userId
+      );
 
-  transactions.push(transaction);
+    const receiver =
+      users.find(
+        user =>
+          user.id ===
+          toId
+      );
 
-  try {
-    saveJSON(USERS_FILE, users);
-    saveJSON(TRANSACTIONS_FILE, transactions);
-  } catch (error) {
-    console.error(
-      "Transfer save error:",
-      error.message
+    if (!sender) {
+      return res
+        .status(401)
+        .json({
+          error:
+            "Kirjaudu sisään"
+        });
+    }
+
+    if (!receiver) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Vastaanottajaa ei löydy"
+        });
+    }
+
+    if (
+      receiver.id ===
+      sender.id
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Et voi lähettää itsellesi"
+        });
+    }
+
+    if (
+      sender.balance <
+      cents
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Saldo ei riitä"
+        });
+    }
+
+    sender.balance -=
+      cents;
+
+    receiver.balance +=
+      cents;
+
+    const transaction = {
+      id:
+        nextTransactionId++,
+
+      from_user:
+        sender.id,
+
+      to_user:
+        receiver.id,
+
+      amount:
+        cents,
+
+      note:
+        note || null,
+
+      created_at:
+        new Date().toISOString()
+    };
+
+    transactions.push(
+      transaction
     );
 
-    sender.balance += cents;
-    receiver.balance -= cents;
+    try {
+      saveJSON(
+        USERS_FILE,
+        users
+      );
 
-    transactions.pop();
-    nextTransactionId--;
+      saveJSON(
+        TRANSACTIONS_FILE,
+        transactions
+      );
+    } catch (error) {
+      console.error(
+        "Transfer save error:",
+        error.message
+      );
 
-    return res.status(500).json({
-      error: "Siirron tallennus epäonnistui"
+      sender.balance +=
+        cents;
+
+      receiver.balance -=
+        cents;
+
+      transactions.pop();
+
+      nextTransactionId--;
+
+      return res
+        .status(500)
+        .json({
+          error:
+            "Siirron tallennus epäonnistui"
+        });
+    }
+
+    res.json({
+      success: true,
+
+      message:
+        "Siirto onnistui",
+
+      amount:
+        cents,
+
+      amountStr:
+        formatPukku(
+          cents
+        )
     });
   }
+);
 
-  res.json({
-    success: true,
-    message: "Siirto onnistui",
-    amount: cents,
-    amountStr: formatPukku(cents)
-  });
-});
+/*
+|--------------------------------------------------------------------------
+| API 404
+|--------------------------------------------------------------------------
+*/
 
-app.use("/api", (req, res) => {
-  res.status(404).json({
-    error: "API endpoint not found"
-  });
-});
+app.use(
+  "/api",
+  (req, res) => {
+    res
+      .status(404)
+      .json({
+        error:
+          "API endpoint not found"
+      });
+  }
+);
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(
-    `Pukku server running on port ${PORT}`
-  );
-});
+/*
+|--------------------------------------------------------------------------
+| Start
+|--------------------------------------------------------------------------
+*/
+
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `Pukku server running on port ${PORT}`
+    );
+  }
+);
