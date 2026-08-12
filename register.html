@@ -6,7 +6,7 @@
   <title>Rekisteröidy — Pukku Pankki</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    :root{--ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;--blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);--text:#10182B;--muted:#7C879E}
+    :root{--ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;--blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);--text:#10182B;--muted:#7C879E;--error:#EF4444}
     *{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);font-family:Inter,sans-serif;color:var(--text)}
     .card{width:100%;max-width:400px;background:var(--panel);border-radius:24px;padding:32px 28px;border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(16,24,40,.15)}
     .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px;margin-bottom:20px}
@@ -14,10 +14,16 @@
     h1{font-family:'Space Grotesk',sans-serif;font-size:26px;margin:0 0 8px}
     .muted{color:var(--muted);font-size:14px;margin-bottom:24px}
     label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--muted)}
-    input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;background:#F6F8FC;margin-bottom:14px;font-family:inherit}
-    input:focus{outline:none;border-color:var(--blue);background:#fff}
-    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer}
-    .error{background:rgba(239,68,68,.1);color:#B91C1C;border:1px solid rgba(239,68,68,.25);padding:12px 16px;border-radius:12px;font-size:14px;margin-bottom:16px;display:none}
+    input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;background:#F6F8FC;margin-bottom:14px;font-family:inherit;transition:all 0.2s}
+    input:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px var(--blue-glow)}
+    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;transition:all 0.2s}
+    .btn:hover{box-shadow:0 8px 20px var(--blue-glow)}
+    .btn:disabled{opacity:0.5;cursor:not-allowed}
+    .error-popup{position:fixed;bottom:20px;right:20px;background:var(--error);color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;max-width:300px;box-shadow:0 10px 30px rgba(239,68,68,.3);animation:slideIn 0.3s ease;z-index:10000}
+    .success-popup{position:fixed;bottom:20px;right:20px;background:#10B981;color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;max-width:300px;box-shadow:0 10px 30px rgba(16,185,129,.3);animation:slideIn 0.3s ease;z-index:10000}
+    @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
+    @keyframes slideOut{to{transform:translateX(400px);opacity:0}}
+    .popup.removing{animation:slideOut 0.3s ease}
     a{color:var(--blue);text-decoration:none}
     .footer{text-align:center;margin-top:20px;font-size:14px}
 
@@ -45,20 +51,31 @@
   <div class="card">
     <div class="eyebrow"><span class="dot"></span>Pukku Pankki</div>
     <h1>Luo tili</h1>
-    <p class="muted">Uusi tili alkaa 0,00 pukusta.</p>
-    <div class="error" id="error"></div>
+    <p class="muted">Aloita 50,00 pukulla!</p>
     <form id="form">
-      <label>Käyttäjänimi</label>
+      <label>Käyttäjänimi (min 3 merkkiä)</label>
       <input type="text" id="username" required minlength="3" autocomplete="username" autofocus>
-      <label>Salasana (väh. 6 merkkiä)</label>
+      <label>Salasana (min 6 merkkiä)</label>
       <input type="password" id="password" required minlength="6" autocomplete="new-password">
-      <button type="submit" class="btn">Luo tili</button>
+      <button type="submit" class="btn" id="submitBtn">Luo tili</button>
     </form>
     <p class="footer">Onko jo tili? <a href="login.html">Kirjaudu</a></p>
   </div>
 
   <script>
     const overlay = document.getElementById('sleepOverlay');
+
+    function showPopup(message, type = 'error') {
+      const popup = document.createElement('div');
+      popup.className = type === 'error' ? 'error-popup' : 'success-popup';
+      popup.textContent = message;
+      document.body.appendChild(popup);
+      
+      setTimeout(() => {
+        popup.classList.add('removing');
+        setTimeout(() => popup.remove(), 300);
+      }, 4000);
+    }
 
     async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
       const controller = new AbortController();
@@ -99,8 +116,8 @@
 
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
-      const error = document.getElementById('error');
-      error.style.display = 'none';
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
 
       try {
         const res = await fetchWithTimeout('/api/register', {
@@ -112,19 +129,21 @@
           })
         }, 5000);
 
-        overlay.style.display = 'none';
-
         const data = await res.json();
         if (data.success) {
-          location.href = 'login.html';
+          showPopup('Tili luotu! Kirjaudutaan sisään...', 'success');
+          setTimeout(() => location.href = 'login.html', 500);
         } else {
-          error.textContent = data.error || 'Virhe';
-          error.style.display = 'block';
+          showPopup(data.error || 'Rekisteröinti epäonnistui');
+          submitBtn.disabled = false;
         }
       } catch (err) {
         if (err.name === 'AbortError' || err instanceof TypeError) {
           overlay.style.display = 'flex';
+        } else {
+          showPopup('Verkkovirhe, yritä uudelleen');
         }
+        submitBtn.disabled = false;
       }
     };
   </script>
