@@ -17,19 +17,36 @@
     .balance-big{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;margin:8px 0 4px}
     .muted{color:var(--muted);font-size:14px}
     h2{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:0 0 16px}
-    label{display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--muted)}
-    input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:15px;background:#F6F8FC;margin-bottom:14px;font-family:inherit}
-    input:focus{outline:none;border-color:var(--blue);background:#fff}
-    .btn{width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;box-shadow:0 10px 25px -8px var(--blue-glow)}
-    .msg{padding:12px 16px;border-radius:12px;font-size:14px;margin-bottom:16px;display:none}
-    .msg.ok{background:rgba(16,185,129,.12);color:#047857;border:1px solid rgba(16,185,129,.3)}
-    .msg.err{background:rgba(239,68,68,.1);color:#B91C1C;border:1px solid rgba(239,68,68,.25)}
+    .btn{display:block;width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;text-align:center;text-decoration:none;box-shadow:0 10px 25px -8px var(--blue-glow)}
     .tx{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
     .tx:last-child{border-bottom:none}
     .out{color:var(--error)}.in{color:var(--success)}
+    .id-badge{font-size:12px;background:rgba(62,123,250,.1);color:var(--blue);padding:4px 10px;border-radius:999px;display:inline-block;margin-top:6px}
+
+    #sleepOverlay{
+      position:fixed;inset:0;z-index:9999;
+      background:#0f172a;
+      display:none;flex-direction:column;align-items:center;justify-content:center;
+      color:#fff;text-align:center;padding:32px;
+      font-family:'Space Grotesk',sans-serif;
+    }
+    #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
+    #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
+    #sleepOverlay button{
+      padding:14px 28px;border:none;border-radius:14px;
+      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);
+      color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
+      cursor:pointer;
+    }
   </style>
 </head>
 <body>
+  <div id="sleepOverlay">
+    <h1>SERVER IS SLEEPING</h1>
+    <p>Render free-tier nukkuu. Paina nappia herättääksesi palvelimen (kestää 30–60 sekuntia).</p>
+    <button id="refreshBtn">Refresh</button>
+  </div>
+
   <div class="container">
     <div class="nav">
       <div class="eyebrow"><span class="dot"></span>Pukku Pankki</div>
@@ -40,20 +57,11 @@
       <p class="muted" style="margin:0">Hei, <strong id="username">...</strong></p>
       <div class="balance-big" id="balance">—</div>
       <p class="muted" style="margin:0">Käytettävissä oleva saldo</p>
+      <div class="id-badge">Oma ID: <span id="myId">—</span></div>
     </div>
 
     <div class="card">
-      <h2>Siirrä pukkuja</h2>
-      <div class="msg" id="msg"></div>
-      <form id="transferForm">
-        <label>Vastaanottaja</label>
-        <input type="text" id="to" required placeholder="esim. bob">
-        <label>Summa (pukku)</label>
-        <input type="text" id="amount" required placeholder="12,50" inputmode="decimal">
-        <label>Viesti (valinnainen)</label>
-        <input type="text" id="note" maxlength="100" placeholder="Kiitos!">
-        <button type="submit" class="btn">Siirrä</button>
-      </form>
+      <a href="pay.html" class="btn">Siirrä pukkuja</a>
     </div>
 
     <div class="card">
@@ -63,60 +71,45 @@
   </div>
 
   <script>
-    async function load() {
-      const res = await fetch('/api/me', {credentials:'include'});
-      if (!res.ok) return location.href = 'login.html';
-      const data = await res.json();
-      document.getElementById('username').textContent = data.username;
-      document.getElementById('balance').textContent = data.balanceStr;
+    const overlay = document.getElementById('sleepOverlay');
 
-      const txRes = await fetch('/api/transactions', {credentials:'include'});
-      const txs = await txRes.json();
-      const box = document.getElementById('txs');
-      if (!txs.length) {
-        box.innerHTML = '<p class="muted">Ei vielä tapahtumia.</p>';
-        return;
-      }
-      box.innerHTML = txs.map(tx => `
-        <div class="tx">
-          <div>
-            ${tx.isOut ? '→ ' + tx.to_name : '← ' + (tx.from_name || 'Järjestelmä')}
-            ${tx.note ? '<br><span class="muted" style="font-size:12px">'+tx.note+'</span>' : ''}
-            <br><span class="muted" style="font-size:12px">${tx.created_at.slice(0,16).replace('T',' ')}</span>
-          </div>
-          <div class="\( {tx.isOut ? 'out' : 'in'}"> \){tx.isOut ? '-' : '+'}${tx.amountStr}</div>
-        </div>
-      `).join('');
-    }
-
-    document.getElementById('transferForm').onsubmit = async (e) => {
-      e.preventDefault();
-      const msg = document.getElementById('msg');
-      msg.style.display = 'none';
-      const res = await fetch('/api/transfer', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        credentials: 'include',
-        body: JSON.stringify({
-          to: document.getElementById('to').value,
-          amount: document.getElementById('amount').value,
-          note: document.getElementById('note').value
-        })
-      });
-      const data = await res.json();
-      msg.style.display = 'block';
-      if (data.success) {
-        msg.className = 'msg ok';
-        msg.textContent = data.message;
-        document.getElementById('to').value = '';
-        document.getElementById('amount').value = '';
-        document.getElementById('note').value = '';
-        load();
-      } else {
-        msg.className = 'msg err';
-        msg.textContent = data.error || 'Virhe';
-      }
+    document.getElementById('refreshBtn').onclick = () => {
+      overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
+      fetch('/api/health').catch(()=>{});
+      setTimeout(() => location.reload(), 5000);
     };
+
+    async function load() {
+      try {
+        const res = await fetch('/api/me', {credentials:'include'});
+        if (res.status === 401) return location.href = 'login.html';
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        document.getElementById('username').textContent = data.username;
+        document.getElementById('balance').textContent = data.balanceStr;
+        document.getElementById('myId').textContent = data.id;
+
+        const txRes = await fetch('/api/transactions', {credentials:'include'});
+        const txs = await txRes.json();
+        const box = document.getElementById('txs');
+        if (!txs.length) {
+          box.innerHTML = '<p class="muted">Ei vielä tapahtumia.</p>';
+          return;
+        }
+        box.innerHTML = txs.map(tx => `
+          <div class="tx">
+            <div>
+              ${tx.isOut ? '→ ' + tx.to_name + ' (ID ' + tx.to_user + ')' : '← ' + (tx.from_name || '?') + ' (ID ' + tx.from_user + ')'}
+              ${tx.note ? '<br><span class="muted" style="font-size:12px">'+tx.note+'</span>' : ''}
+              <br><span class="muted" style="font-size:12px">${tx.created_at.slice(0,16).replace('T',' ')}</span>
+            </div>
+            <div class="\( {tx.isOut ? 'out' : 'in'}"> \){tx.isOut ? '-' : '+'}${tx.amountStr}</div>
+          </div>
+        `).join('');
+      } catch {
+        overlay.style.display = 'flex';
+      }
+    }
 
     document.getElementById('logout').onclick = async () => {
       await fetch('/api/logout', {method:'POST', credentials:'include'});
