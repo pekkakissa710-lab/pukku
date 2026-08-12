@@ -31,15 +31,15 @@ function saveJSON(file, data) {
 let users = loadJSON(usersFile);
 let transactions = loadJSON(txsFile);
 
-// Demo-käyttäjät jos tyhjä
+// Demo-käyttäjät jos tyhjä (starting balance: 100 pukku = 10000 cents)
 if (users.length === 0) {
   users = [
-    { id: 1, username: "alice", password_hash: bcrypt.hashSync("alice123", 10), balance: 0, created_at: new Date().toISOString() },
-    { id: 2, username: "bob", password_hash: bcrypt.hashSync("bob123", 10), balance: 0, created_at: new Date().toISOString() },
-    { id: 3, username: "carol", password_hash: bcrypt.hashSync("carol123", 10), balance: 0, created_at: new Date().toISOString() }
+    { id: 1, username: "alice", password_hash: bcrypt.hashSync("alice123", 10), balance: 10000, created_at: new Date().toISOString() },
+    { id: 2, username: "bob", password_hash: bcrypt.hashSync("bob123", 10), balance: 10000, created_at: new Date().toISOString() },
+    { id: 3, username: "carol", password_hash: bcrypt.hashSync("carol123", 10), balance: 10000, created_at: new Date().toISOString() }
   ];
   saveJSON(usersFile, users);
-  console.log("Demo-käyttäjät luotu");
+  console.log("Demo-käyttäjät luotu with 100 pukku each");
 }
 
 let nextUserId = users.reduce((max, u) => Math.max(max, u.id), 0) + 1;
@@ -53,7 +53,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || "pukku-secret-change-me",
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { maxAge: 7 * 24 * 60 * 60 * 1000, httpOnly: true }
 }));
 
 app.use(express.static(__dirname));
@@ -80,8 +80,8 @@ app.post("/api/register", (req, res) => {
   const username = (req.body.username || "").trim().toLowerCase();
   const password = req.body.password || "";
 
-  if (username.length < 3) return res.status(400).json({ error: "Käyttäjänimi liian lyhyt" });
-  if (password.length < 6) return res.status(400).json({ error: "Salasana liian lyhyt" });
+  if (username.length < 3) return res.status(400).json({ error: "Käyttäjänimi liian lyhyt (min 3)" });
+  if (password.length < 6) return res.status(400).json({ error: "Salasana liian lyhyt (min 6)" });
   if (users.find(u => u.username === username)) {
     return res.status(400).json({ error: "Käyttäjänimi on jo käytössä" });
   }
@@ -90,12 +90,12 @@ app.post("/api/register", (req, res) => {
     id: nextUserId++,
     username,
     password_hash: bcrypt.hashSync(password, 10),
-    balance: 0,
+    balance: 5000, // Uudet käyttäjät saavat 50 pukkua
     created_at: new Date().toISOString()
   };
   users.push(user);
   saveJSON(usersFile, users);
-  res.json({ success: true });
+  res.json({ success: true, message: "Rekisteröinti onnistui! Kirjaudu sisään." });
 });
 
 // Kirjautuminen
@@ -103,9 +103,13 @@ app.post("/api/login", (req, res) => {
   const username = (req.body.username || "").trim().toLowerCase();
   const password = req.body.password || "";
 
+  if (!username || !password) {
+    return res.status(400).json({ error: "Käyttäjänimi ja salasana vaaditaan" });
+  }
+
   const user = users.find(u => u.username === username);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-    return res.status(400).json({ error: "Virheellinen käyttäjänimi tai salasana" });
+    return res.status(401).json({ error: "Virheellinen käyttäjänimi tai salasana" });
   }
 
   req.session.userId = user.id;
