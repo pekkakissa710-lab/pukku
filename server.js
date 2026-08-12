@@ -1,7 +1,6 @@
 const express = require("express");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
-const Database = require("better-sqlite3");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
@@ -9,46 +8,42 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Tietokanta /data-kansioon ---
+// --- Data-kansio ---
 const dataDir = path.join(__dirname, "data");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(path.join(dataDir, "pukku.db"));
-db.pragma("journal_mode = WAL");
-db.pragma("foreign_keys = ON");
+const usersFile = path.join(dataDir, "users.json");
+const txsFile = path.join(dataDir, "transactions.json");
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL COLLATE NOCASE,
-    password_hash TEXT NOT NULL,
-    balance INTEGER NOT NULL DEFAULT 0 CHECK (balance >= 0),
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    from_user INTEGER,
-    to_user INTEGER NOT NULL,
-    amount INTEGER NOT NULL CHECK (amount > 0),
-    note TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (from_user) REFERENCES users(id),
-    FOREIGN KEY (to_user) REFERENCES users(id)
-  );
-`);
-
-// Demo-käyttäjät (alkusaldo 0)
-const count = db.prepare("SELECT COUNT(*) AS c FROM users").get().c;
-if (count === 0) {
-  const insert = db.prepare("INSERT INTO users (username, password_hash, balance) VALUES (?, ?, ?)");
-  [
-    ["alice", "alice123", 0],
-    ["bob", "bob123", 0],
-    ["carol", "carol123", 0]
-  ].forEach(([u, p, b]) => insert.run(u, bcrypt.hashSync(p, 10), b));
-  console.log("Demo-käyttäjät luotu (saldo 0)");
+function loadJSON(file, fallback = []) {
+  try {
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (e) {
+    console.error("Load error:", e.message);
+  }
+  return fallback;
 }
+
+function saveJSON(file, data) {
+  fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf8");
+}
+
+let users = loadJSON(usersFile);
+let transactions = loadJSON(txsFile);
+
+// Demo-käyttäjät jos tyhjä
+if (users.length === 0) {
+  users = [
+    { id: 1, username: "alice", password_hash: bcrypt.hashSync("alice123", 10), balance: 0, created_at: new Date().toISOString() },
+    { id: 2, username: "bob", password_hash: bcrypt.hashSync("bob123", 10), balance: 0, created_at: new Date().toISOString() },
+    { id: 3, username: "carol", password_hash: bcrypt.hashSync("carol123", 10), balance: 0, created_at: new Date().toISOString() }
+  ];
+  saveJSON(usersFile, users);
+  console.log("Demo-käyttäjät luotu");
+}
+
+let nextUserId = users.reduce((max, u) => Math.max(max, u.id), 0) + 1;
+let nextTxId = transactions.reduce((max, t) => Math.max(max, t.id), 0) + 1;
 
 // --- Middleware ---
 app.use(cors({ origin: true, credentials: true }));
@@ -71,32 +66,36 @@ function formatPukku(cents) {
 }
 
 function requireAuth(req, res, next) {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: "Kirjaudu sisään" });
-  }
+  if (!req.session.userId) return res.status(401).json({ error: "Kirjaudu sisään" });
   next();
 }
 
-// Health (wake-up)
+// Health
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", time: new Date().toISOString() });
 });
 
-// Rekisteröinti (ei lahjaa)
+// Rekisteröinti
 app.post("/api/register", (req, res) => {
   const username = (req.body.username || "").trim().toLowerCase();
   const password = req.body.password || "";
 
   if (username.length < 3) return res.status(400).json({ error: "Käyttäjänimi liian lyhyt" });
   if (password.length < 6) return res.status(400).json({ error: "Salasana liian lyhyt" });
-
-  try {
-    const hash = bcrypt.hashSync(password, 10);
-    db.prepare("INSERT INTO users (username, password_hash, balance) VALUES (?, ?, ?)").run(username, hash, 0);
-    res.json({ success: true });
-  } catch {
-    res.status(400).json({ error: "Käyttäjänimi on jo käytössä" });
+  if (users.find(u => u.username === username)) {
+    return res.status(400).json({ error: "Käyttäjänimi on jo käytössä" });
   }
+
+  const user = {
+    id: nextUserId++,
+    username,
+    password_hash: bcrypt.hashSync(password, 10),
+    balance: 0,
+    created_at: new Date().toISOString()
+  };
+  users.push(user);
+  saveJSON(usersFile, users);
+  res.json({ success: true });
 });
 
 // Kirjautuminen
@@ -104,7 +103,7 @@ app.post("/api/login", (req, res) => {
   const username = (req.body.username || "").trim().toLowerCase();
   const password = req.body.password || "";
 
-  const user = db.prepare("SELECT * FROM users WHERE username = ?").get(username);
+  const user = users.find(u => u.username === username);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(400).json({ error: "Virheellinen käyttäjänimi tai salasana" });
   }
@@ -120,7 +119,8 @@ app.post("/api/logout", (req, res) => {
 
 // Omat tiedot
 app.get("/api/me", requireAuth, (req, res) => {
-  const user = db.prepare("SELECT id, username, balance FROM users WHERE id = ?").get(req.session.userId);
+  const user = users.find(u => u.id === req.session.userId);
+  if (!user) return res.status(401).json({ error: "Kirjaudu sisään" });
   res.json({
     id: user.id,
     username: user.username,
@@ -129,33 +129,35 @@ app.get("/api/me", requireAuth, (req, res) => {
   });
 });
 
-// Käyttäjät ID:llä (siirtoa varten)
+// Käyttäjä ID:llä
 app.get("/api/user/:id", requireAuth, (req, res) => {
-  const user = db.prepare("SELECT id, username FROM users WHERE id = ?").get(req.params.id);
+  const user = users.find(u => u.id === parseInt(req.params.id, 10));
   if (!user) return res.status(404).json({ error: "Käyttäjää ei löydy" });
-  res.json(user);
+  res.json({ id: user.id, username: user.username });
 });
 
 // Tapahtumat
 app.get("/api/transactions", requireAuth, (req, res) => {
-  const txs = db.prepare(`
-    SELECT t.*, fu.username AS from_name, tu.username AS to_name
-    FROM transactions t
-    LEFT JOIN users fu ON t.from_user = fu.id
-    JOIN users tu ON t.to_user = tu.id
-    WHERE t.from_user = ? OR t.to_user = ?
-    ORDER BY t.created_at DESC
-    LIMIT 30
-  `).all(req.session.userId, req.session.userId);
-
-  res.json(txs.map(tx => ({
-    ...tx,
-    amountStr: formatPukku(tx.amount),
-    isOut: tx.from_user === req.session.userId
-  })));
+  const myId = req.session.userId;
+  const txs = transactions
+    .filter(t => t.from_user === myId || t.to_user === myId)
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 30)
+    .map(tx => {
+      const fromUser = users.find(u => u.id === tx.from_user);
+      const toUser = users.find(u => u.id === tx.to_user);
+      return {
+        ...tx,
+        from_name: fromUser ? fromUser.username : null,
+        to_name: toUser ? toUser.username : null,
+        amountStr: formatPukku(tx.amount),
+        isOut: tx.from_user === myId
+      };
+    });
+  res.json(txs);
 });
 
-// Siirto vastaanottajan ID:llä
+// Siirto
 app.post("/api/transfer", requireAuth, (req, res) => {
   const toId = parseInt(req.body.toId, 10);
   const note = (req.body.note || "").trim().slice(0, 100);
@@ -172,26 +174,30 @@ app.post("/api/transfer", requireAuth, (req, res) => {
 
   if (!toId) return res.status(400).json({ error: "Vastaanottajan ID puuttuu" });
 
-  try {
-    const transfer = db.transaction(() => {
-      const sender = db.prepare("SELECT * FROM users WHERE id = ?").get(req.session.userId);
-      const receiver = db.prepare("SELECT * FROM users WHERE id = ?").get(toId);
+  const sender = users.find(u => u.id === req.session.userId);
+  const receiver = users.find(u => u.id === toId);
 
-      if (!receiver) throw new Error("Vastaanottajaa ei löydy");
-      if (receiver.id === sender.id) throw new Error("Et voi lähettää itsellesi");
-      if (sender.balance < cents) throw new Error("Saldo ei riitä");
+  if (!receiver) return res.status(400).json({ error: "Vastaanottajaa ei löydy" });
+  if (receiver.id === sender.id) return res.status(400).json({ error: "Et voi lähettää itsellesi" });
+  if (sender.balance < cents) return res.status(400).json({ error: "Saldo ei riitä" });
 
-      db.prepare("UPDATE users SET balance = balance - ? WHERE id = ?").run(cents, sender.id);
-      db.prepare("UPDATE users SET balance = balance + ? WHERE id = ?").run(cents, receiver.id);
-      db.prepare("INSERT INTO transactions (from_user, to_user, amount, note) VALUES (?, ?, ?, ?)")
-        .run(sender.id, receiver.id, cents, note || null);
-    });
+  sender.balance -= cents;
+  receiver.balance += cents;
 
-    transfer();
-    res.json({ success: true, message: "Siirto onnistui" });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+  const tx = {
+    id: nextTxId++,
+    from_user: sender.id,
+    to_user: receiver.id,
+    amount: cents,
+    note: note || null,
+    created_at: new Date().toISOString()
+  };
+  transactions.push(tx);
+
+  saveJSON(usersFile, users);
+  saveJSON(txsFile, transactions);
+
+  res.json({ success: true, message: "Siirto onnistui" });
 });
 
 app.listen(PORT, () => {
