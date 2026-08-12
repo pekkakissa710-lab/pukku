@@ -10,7 +10,7 @@
 <style>
 :root{
   --bg:#eef2fa;
-  --card:#ffffff;
+  --card:#fff;
   --text:#10182b;
   --muted:#7c879e;
   --line:rgba(16,24,40,.08);
@@ -29,7 +29,11 @@ body{
   margin:0;
   min-height:100vh;
   background:
-    radial-gradient(900px 500px at 50% -100px,rgba(62,123,250,.14),transparent 65%),
+    radial-gradient(
+      900px 500px at 50% -100px,
+      rgba(62,123,250,.14),
+      transparent 65%
+    ),
     var(--bg);
   color:var(--text);
   font-family:Inter,sans-serif;
@@ -65,12 +69,36 @@ body{
   box-shadow:0 0 16px rgba(62,123,250,.55);
 }
 
+.auth-area{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.login-link{
+  color:var(--blue);
+  text-decoration:none;
+  font-size:13px;
+  font-weight:600;
+}
+
+.user-name{
+  color:var(--text);
+  font-size:13px;
+  font-weight:600;
+}
+
 .logout{
   border:0;
   background:transparent;
   color:var(--muted);
   font:500 13px Inter,sans-serif;
   cursor:pointer;
+  padding:4px;
+}
+
+.hidden{
+  display:none !important;
 }
 
 .layout{
@@ -291,10 +319,9 @@ body{
   max-width:320px;
   padding:14px 18px;
   border-radius:14px;
-  color:white;
+  color:#fff;
   font-size:14px;
   box-shadow:0 15px 40px rgba(0,0,0,.18);
-  animation:toastIn .25s ease;
   z-index:100;
 }
 
@@ -306,17 +333,6 @@ body{
   background:var(--red);
 }
 
-@keyframes toastIn{
-  from{
-    opacity:0;
-    transform:translateY(15px);
-  }
-  to{
-    opacity:1;
-    transform:translateY(0);
-  }
-}
-
 #sleepOverlay{
   position:fixed;
   inset:0;
@@ -326,7 +342,7 @@ body{
   flex-direction:column;
   padding:30px;
   background:#0f172a;
-  color:white;
+  color:#fff;
   text-align:center;
   z-index:999;
 }
@@ -346,7 +362,7 @@ body{
   border:0;
   border-radius:14px;
   padding:14px 25px;
-  color:white;
+  color:#fff;
   background:linear-gradient(135deg,var(--blue),var(--blue2));
   font:600 15px "Space Grotesk",sans-serif;
   cursor:pointer;
@@ -389,6 +405,12 @@ body{
     height:38px;
     flex-basis:38px;
   }
+
+  .user-name{
+    max-width:100px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
 }
 </style>
 </head>
@@ -398,89 +420,145 @@ body{
 <div id="sleepOverlay">
   <h1>SERVER IS SLEEPING</h1>
   <p>Render-palvelin nukkuu. Herätetään se ja yritetään uudelleen.</p>
-  <button id="refreshBtn">Herätä serveri</button>
+  <button id="refreshBtn">Yritä uudelleen</button>
 </div>
 
 <main class="app">
 
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-dot"></span>
-      Pukku
-    </div>
+<header class="topbar">
 
-    <button class="logout" id="logout">
+  <div class="brand">
+    <span class="brand-dot"></span>
+    Pukku
+  </div>
+
+  <div class="auth-area">
+
+    <a
+      id="loginLink"
+      class="login-link"
+      href="/login.html"
+    >
+      Kirjaudu sisään
+    </a>
+
+    <span
+      id="userName"
+      class="user-name hidden"
+    ></span>
+
+    <button
+      id="logout"
+      class="logout hidden"
+      type="button"
+    >
       Kirjaudu ulos
     </button>
-  </header>
 
-  <section class="layout">
+  </div>
 
-    <div class="card balance-card">
+</header>
 
-      <div>
-        <div class="label">Pukku Pankki</div>
+<section class="layout">
 
-        <div class="greeting">
-          Hei, <span id="username">...</span> 👋
-        </div>
+  <div class="card balance-card">
 
-        <div class="balance" id="balance">
-          —
-        </div>
+    <div>
 
-        <div class="label">
-          Käytettävissä oleva saldo
-        </div>
+      <div class="label">
+        Pukku Pankki
       </div>
 
-      <div class="account-row">
+      <div class="greeting">
+        Hei, <span id="username">vieras</span> 👋
+      </div>
 
-        <div class="id">
-          ID <span id="myId">—</span>
-        </div>
+      <div
+        class="balance"
+        id="balance"
+      >
+        —
+      </div>
 
-        <button class="copy" id="copyId">
-          Kopioi ID
-        </button>
-
+      <div class="label">
+        Käytettävissä oleva saldo
       </div>
 
     </div>
 
-    <div class="card actions">
+    <div class="account-row">
 
-      <h2>Siirrä pukkuja</h2>
+      <div class="id">
+        ID <span id="myId">—</span>
+      </div>
 
-      <p>
-        Lähetä pukkuja toiselle käyttäjälle hänen käyttäjä-ID:llään.
-      </p>
-
-      <a class="primary" href="/pay.html">
-        Siirrä pukkuja →
-      </a>
+      <button
+        class="copy"
+        id="copyId"
+        type="button"
+      >
+        Kopioi ID
+      </button>
 
     </div>
 
-  </section>
+  </div>
 
-  <section class="card transactions">
+  <div class="card actions">
 
-    <div class="section-head">
-      <h2>Tapahtumat</h2>
-      <span class="status">● Live</span>
+    <h2>Siirrä pukkuja</h2>
+
+    <p>
+      Lähetä pukkuja toiselle käyttäjälle hänen käyttäjä-ID:llään.
+    </p>
+
+    <a
+      class="primary"
+      href="/pay.html"
+      id="payLink"
+    >
+      Siirrä pukkuja →
+    </a>
+
+  </div>
+
+</section>
+
+<section class="card transactions">
+
+  <div class="section-head">
+
+    <h2>Tapahtumat</h2>
+
+    <span
+      class="status"
+      id="status"
+    >
+      ● Offline
+    </span>
+
+  </div>
+
+  <div id="txs">
+    <div class="empty">
+      Kirjaudu sisään nähdäksesi tapahtumat.
     </div>
+  </div>
 
-    <div id="txs">
-      <div class="loading">Ladataan tapahtumia...</div>
-    </div>
-
-  </section>
+</section>
 
 </main>
 
 <script>
 const overlay = document.getElementById("sleepOverlay");
+const loginLink = document.getElementById("loginLink");
+const userName = document.getElementById("userName");
+const logoutButton = document.getElementById("logout");
+const usernameElement = document.getElementById("username");
+const balanceElement = document.getElementById("balance");
+const myIdElement = document.getElementById("myId");
+const txContainer = document.getElementById("txs");
+const statusElement = document.getElementById("status");
 
 function showToast(message, type = "success") {
   const toast = document.createElement("div");
@@ -495,7 +573,7 @@ function showToast(message, type = "success") {
   }, 3000);
 }
 
-async function fetchWithTimeout(url, options = {}, timeout = 7000) {
+async function request(url, options = {}, timeout = 10000) {
   const controller = new AbortController();
 
   const timer = setTimeout(() => {
@@ -506,7 +584,8 @@ async function fetchWithTimeout(url, options = {}, timeout = 7000) {
     const response = await fetch(url, {
       ...options,
       signal: controller.signal,
-      credentials: "include"
+      credentials: "include",
+      cache: "no-store"
     });
 
     clearTimeout(timer);
@@ -530,69 +609,92 @@ function escapeHTML(value) {
 function formatDate(value) {
   const date = new Date(value);
 
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
   return date.toLocaleString("fi-FI", {
-    day: "numeric",
-    month: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
+    day:"numeric",
+    month:"numeric",
+    hour:"2-digit",
+    minute:"2-digit"
   });
 }
 
-async function loadDashboard() {
-  try {
-    const meResponse = await fetchWithTimeout("/api/me");
+function showLoggedOut() {
+  loginLink.classList.remove("hidden");
+  userName.classList.add("hidden");
+  logoutButton.classList.add("hidden");
 
-    if (meResponse.status === 401) {
-      location.href = "/login.html";
-      return;
-    }
+  usernameElement.textContent = "vieras";
+  balanceElement.textContent = "—";
+  myIdElement.textContent = "—";
 
-    if (!meResponse.ok) {
-      throw new Error("Server error");
-    }
+  statusElement.textContent = "● Offline";
 
-    const me = await meResponse.json();
+  txContainer.innerHTML = `
+    <div class="empty">
+      Kirjaudu sisään nähdäksesi tapahtumat.
+    </div>
+  `;
+}
 
-    overlay.style.display = "none";
+function showLoggedIn(user) {
+  loginLink.classList.add("hidden");
 
-    document.getElementById("username").textContent = me.username;
-    document.getElementById("balance").textContent = me.balanceStr;
-    document.getElementById("myId").textContent = me.id;
+  userName.classList.remove("hidden");
+  logoutButton.classList.remove("hidden");
 
-    const txResponse = await fetchWithTimeout("/api/transactions");
+  userName.textContent = user.username;
 
-    if (!txResponse.ok) {
-      throw new Error("Transaction error");
-    }
+  usernameElement.textContent = user.username;
+  balanceElement.textContent = user.balanceStr;
+  myIdElement.textContent = user.id;
 
-    const transactions = await txResponse.json();
-    const container = document.getElementById("txs");
+  statusElement.textContent = "● Live";
+}
 
-    if (!transactions.length) {
-      container.innerHTML = `
-        <div class="empty">
-          Ei vielä tapahtumia.<br>
-          <span>Ensimmäinen siirtosi näkyy täällä.</span>
-        </div>
-      `;
+async function loadTransactions() {
+  const response = await request(
+    "/api/transactions"
+  );
 
-      return;
-    }
+  if (response.status === 401) {
+    showLoggedOut();
+    return;
+  }
 
-    container.innerHTML = transactions.map(tx => {
-      const outgoing = tx.isOut;
+  if (!response.ok) {
+    throw new Error("transactions");
+  }
+
+  const transactions = await response.json();
+
+  if (!Array.isArray(transactions) || transactions.length === 0) {
+    txContainer.innerHTML = `
+      <div class="empty">
+        Ei vielä tapahtumia.<br>
+        Ensimmäinen siirtosi näkyy täällä.
+      </div>
+    `;
+
+    return;
+  }
+
+  txContainer.innerHTML = transactions
+    .map(tx => {
+
+      const outgoing = Boolean(tx.isOut);
 
       const name = outgoing
         ? (tx.to_name || `ID ${tx.to_user}`)
         : (tx.from_name || `ID ${tx.from_user}`);
 
-      const arrow = outgoing ? "↑" : "↓";
-
       return `
         <div class="tx">
 
           <div class="tx-icon ${outgoing ? "out" : "in"}">
-            ${arrow}
+            ${outgoing ? "↑" : "↓"}
           </div>
 
           <div class="tx-info">
@@ -603,7 +705,8 @@ async function loadDashboard() {
 
             <div class="tx-meta">
               ${escapeHTML(tx.note || "Pukku-siirto")}
-              · ${escapeHTML(formatDate(tx.created_at))}
+              ·
+              ${escapeHTML(formatDate(tx.created_at))}
             </div>
 
           </div>
@@ -614,44 +717,147 @@ async function loadDashboard() {
 
         </div>
       `;
-    }).join("");
+    })
+    .join("");
+}
+
+async function loadDashboard() {
+  try {
+
+    const health = await request(
+      "/api/health",
+      {},
+      10000
+    );
+
+    if (!health.ok) {
+      throw new Error("health");
+    }
+
+    overlay.style.display = "none";
+
+    const response = await request(
+      "/api/me",
+      {},
+      10000
+    );
+
+    if (response.status === 401) {
+      showLoggedOut();
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error("me");
+    }
+
+    const user = await response.json();
+
+    showLoggedIn(user);
+
+    await loadTransactions();
 
   } catch (error) {
-    if (
-      error.name === "AbortError" ||
-      error instanceof TypeError
-    ) {
+
+    if (error.name === "AbortError") {
       overlay.style.display = "flex";
-    } else {
-      showToast("Tietojen lataaminen epäonnistui", "error");
+      return;
     }
+
+    if (error instanceof TypeError) {
+      overlay.style.display = "flex";
+      return;
+    }
+
+    showLoggedOut();
+
+    showToast(
+      "Palvelimeen ei saatu yhteyttä.",
+      "error"
+    );
   }
 }
 
-document.getElementById("logout").addEventListener("click", async () => {
-  try {
-    await fetchWithTimeout("/api/logout", {
-      method: "POST"
-    }, 5000);
-  } finally {
-    location.href = "/login.html";
+logoutButton.addEventListener(
+  "click",
+  async () => {
+
+    logoutButton.disabled = true;
+
+    try {
+
+      const response = await request(
+        "/api/logout",
+        {
+          method:"POST"
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("logout");
+      }
+
+      showLoggedOut();
+
+      showToast(
+        "Kirjauduttu ulos.",
+        "success"
+      );
+
+    } catch {
+
+      showToast(
+        "Uloskirjautuminen epäonnistui.",
+        "error"
+      );
+
+    } finally {
+
+      logoutButton.disabled = false;
+
+    }
   }
-});
+);
 
-document.getElementById("copyId").addEventListener("click", async () => {
-  const id = document.getElementById("myId").textContent;
+document
+  .getElementById("copyId")
+  .addEventListener("click", async () => {
 
-  try {
-    await navigator.clipboard.writeText(id);
-    showToast("ID kopioitu!");
-  } catch {
-    showToast("ID:n kopiointi epäonnistui", "error");
-  }
-});
+    const id = myIdElement.textContent;
 
-document.getElementById("refreshBtn").addEventListener("click", () => {
-  location.reload();
-});
+    if (!id || id === "—") {
+      showToast(
+        "Kirjaudu sisään ensin.",
+        "error"
+      );
+
+      return;
+    }
+
+    try {
+
+      await navigator.clipboard.writeText(id);
+
+      showToast(
+        "ID kopioitu!",
+        "success"
+      );
+
+    } catch {
+
+      showToast(
+        "ID:n kopiointi epäonnistui.",
+        "error"
+      );
+
+    }
+  });
+
+document
+  .getElementById("refreshBtn")
+  .addEventListener("click", () => {
+    location.reload();
+  });
 
 loadDashboard();
 </script>
