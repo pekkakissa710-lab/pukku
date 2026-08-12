@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Oma tili — Pukku Pankki{% endblock %}
+{% block content %}
+<div class="nav">
+  <div class="eyebrow" style="margin:0"><span class="dot"></span>Pukku Pankki</div>
+  <a href="{{ url_for('logout') }}">Kirjaudu ulos</a>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <p class="muted" style="margin:0">Hei, <strong>{{ user.username }}</strong></p>
+  <div class="balance-big">{{ balance_str }}</div>
+  <p class="muted" style="margin:0">Käytettävissä oleva saldo</p>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <h1 style="font-size:20px; margin-bottom:16px">Siirrä pukkuja</h1>
+  <form method="post" action="{{ url_for('transfer') }}">
+    <label for="to">Vastaanottaja (käyttäjänimi)</label>
+    <input type="text" id="to" name="to" required placeholder="esim. bob" autocomplete="off">
+
+    <label for="amount">Summa (pukku)</label>
+    <input type="text" id="amount" name="amount" required placeholder="12,50" inputmode="decimal">
+
+    <label for="note">Viesti (valinnainen)</label>
+    <input type="text" id="note" name="note" maxlength="100" placeholder="Kiitos kahvista!">
+
+    <button type="submit" class="btn btn-primary">Siirrä</button>
+  </form>
+</div>
+
+<div class="card">
+  <h1 style="font-size:20px; margin-bottom:8px">Tapahtumat</h1>
+  {% if transactions %}
+    <div class="tx-list">
+      {% for tx in transactions %}
+        {% set is_out = tx.from_user == user.id %}
+        <div class="tx-item">
+          <div>
+            {% if is_out %}
+              → {{ tx.to_name }}
+            {% else %}
+              ← {{ tx.from_name or "Järjestelmä" }}
+            {% endif %}
+            {% if tx.note %}<br><span class="muted" style="font-size:12px">{{ tx.note }}</span>{% endif %}
+            <br><span class="muted" style="font-size:12px">{{ tx.created_at[:16].replace('T',' ') }}</span>
+          </div>
+          <div class="tx-amount {{ 'out' if is_out else 'in' }}">
+            {{ "-" if is_out else "+" }}{{ format_pukku(tx.amount) }}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">Ei vielä tapahtumia.</p>
+  {% endif %}
+</div>
+{% endblock %}
