@@ -24,19 +24,16 @@
     .id-badge{font-size:12px;background:rgba(62,123,250,.1);color:var(--blue);padding:4px 10px;border-radius:999px;display:inline-block;margin-top:6px}
 
     #sleepOverlay{
-      position:fixed;inset:0;z-index:9999;
-      background:#0f172a;
+      position:fixed;inset:0;z-index:9999;background:#0f172a;
       display:none;flex-direction:column;align-items:center;justify-content:center;
-      color:#fff;text-align:center;padding:32px;
-      font-family:'Space Grotesk',sans-serif;
+      color:#fff;text-align:center;padding:32px;font-family:'Space Grotesk',sans-serif;
     }
     #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
     #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
     #sleepOverlay button{
       padding:14px 28px;border:none;border-radius:14px;
-      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);
-      color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
-      cursor:pointer;
+      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);color:#fff;
+      font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;
     }
   </style>
 </head>
@@ -76,26 +73,36 @@
     document.getElementById('refreshBtn').onclick = () => {
       overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
       fetch('/api/health').catch(()=>{});
-      setTimeout(() => location.reload(), 5000);
+      setTimeout(() => location.reload(), 4000);
     };
 
     async function load() {
       try {
-        const res = await fetch('/api/me', {credentials:'include'});
-        if (res.status === 401) return location.href = 'login.html';
-        if (!res.ok) throw new Error();
+        const res = await fetch('/api/me', { credentials: 'include' });
+
+        if (res.status === 401) {
+          location.href = 'login.html';
+          return;
+        }
+
+        if (!res.ok) throw new Error('Server error');
+
+        overlay.style.display = 'none';
+
         const data = await res.json();
         document.getElementById('username').textContent = data.username;
         document.getElementById('balance').textContent = data.balanceStr;
         document.getElementById('myId').textContent = data.id;
 
-        const txRes = await fetch('/api/transactions', {credentials:'include'});
+        const txRes = await fetch('/api/transactions', { credentials: 'include' });
         const txs = await txRes.json();
         const box = document.getElementById('txs');
+
         if (!txs.length) {
           box.innerHTML = '<p class="muted">Ei vielä tapahtumia.</p>';
           return;
         }
+
         box.innerHTML = txs.map(tx => `
           <div class="tx">
             <div>
@@ -106,13 +113,13 @@
             <div class="\( {tx.isOut ? 'out' : 'in'}"> \){tx.isOut ? '-' : '+'}${tx.amountStr}</div>
           </div>
         `).join('');
-      } catch {
+      } catch (err) {
         overlay.style.display = 'flex';
       }
     }
 
     document.getElementById('logout').onclick = async () => {
-      await fetch('/api/logout', {method:'POST', credentials:'include'});
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
       location.href = 'login.html';
     };
 
