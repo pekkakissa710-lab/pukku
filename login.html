@@ -21,26 +21,21 @@
     a{color:var(--blue);text-decoration:none}
     .footer{text-align:center;margin-top:20px;font-size:14px}
 
-    /* FULL SCREEN SLEEP OVERLAY */
     #sleepOverlay{
-      position:fixed;inset:0;z-index:9999;
-      background:#0f172a;
+      position:fixed;inset:0;z-index:9999;background:#0f172a;
       display:none;flex-direction:column;align-items:center;justify-content:center;
-      color:#fff;text-align:center;padding:32px;
-      font-family:'Space Grotesk',sans-serif;
+      color:#fff;text-align:center;padding:32px;font-family:'Space Grotesk',sans-serif;
     }
     #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
     #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
     #sleepOverlay button{
       padding:14px 28px;border:none;border-radius:14px;
-      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);
-      color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
-      cursor:pointer;box-shadow:0 10px 25px -8px rgba(62,123,250,.4);
+      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);color:#fff;
+      font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;
     }
   </style>
 </head>
 <body>
-  <!-- SLEEP OVERLAY -->
   <div id="sleepOverlay">
     <h1>SERVER IS SLEEPING</h1>
     <p>Render free-tier nukkuu. Paina nappia herättääksesi palvelimen (kestää 30–60 sekuntia).</p>
@@ -72,15 +67,17 @@
           overlay.style.display = 'none';
           return true;
         }
-      } catch {}
-      overlay.style.display = 'flex';
-      return false;
+      } catch (err) {
+        overlay.style.display = 'flex';
+        return false;
+      }
+      return true;
     }
 
     document.getElementById('refreshBtn').onclick = () => {
       overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
       fetch('/api/health').catch(()=>{});
-      setTimeout(() => location.reload(), 5000);
+      setTimeout(() => location.reload(), 4000);
     };
 
     checkServer();
@@ -89,6 +86,7 @@
       e.preventDefault();
       const error = document.getElementById('error');
       error.style.display = 'none';
+
       try {
         const res = await fetch('/api/login', {
           method: 'POST',
@@ -99,13 +97,17 @@
             password: document.getElementById('password').value
           })
         });
+
+        overlay.style.display = 'none';
+
         const data = await res.json();
-        if (data.success) location.href = '/';
-        else {
+        if (data.success) {
+          location.href = '/';
+        } else {
           error.textContent = data.error || 'Virhe';
           error.style.display = 'block';
         }
-      } catch {
+      } catch (err) {
         overlay.style.display = 'flex';
       }
     };
