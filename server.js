@@ -7,31 +7,53 @@ const fs = require("fs");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const dataDir = path.join(__dirname, "data");
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+const SESSION_SECRET = process.env.SECRET_KEY;
 
-const usersFile = path.join(dataDir, "users.json");
-const txsFile = path.join(dataDir, "transactions.json");
+if (!SESSION_SECRET) {
+  console.error("ERROR: SECRET_KEY environment variable is missing.");
+  process.exit(1);
+}
+
+const DATA_DIR = path.join(__dirname, "data");
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+const TRANSACTIONS_FILE = path.join(DATA_DIR, "transactions.json");
+
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
 function loadJSON(file, fallback = []) {
   try {
-    if (fs.existsSync(file)) {
-      return JSON.parse(fs.readFileSync(file, "utf8"));
-    }
+    if (!fs.existsSync(file)) return fallback;
+
+    const raw = fs.readFileSync(file, "utf8");
+
+    if (!raw.trim()) return fallback;
+
+    return JSON.parse(raw);
   } catch (error) {
-    console.error("Load error:", error.message);
+    console.error(`Failed to load ${file}:`, error.message);
+    return fallback;
   }
-  return fallback;
 }
 
 function saveJSON(file, data) {
   const tempFile = `${file}.tmp`;
-  fs.writeFileSync(tempFile, JSON.stringify(data, null, 2), "utf8");
+
+  fs.writeFileSync(
+    tempFile,
+    JSON.stringify(data, null, 2),
+    "utf8"
+  );
+
   fs.renameSync(tempFile, file);
 }
 
-let users = loadJSON(usersFile);
-let transactions = loadJSON(txsFile);
+let users = loadJSON(USERS_FILE, []);
+let transactions = loadJSON(TRANSACTIONS_FILE, []);
+
+if (!Array.isArray(users)) users = [];
+if (!Array.isArray(transactions)) transactions = [];
 
 if (users.length === 0) {
   users = [
@@ -58,57 +80,43 @@ if (users.length === 0) {
     }
   ];
 
-  saveJSON(usersFile, users);
+  saveJSON(USERS_FILE, users);
+
   console.log("Prototype demo users created");
 }
 
 let nextUserId =
-  users.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) + 1;
+  users.reduce(
+    (max, user) => Math.max(max, Number(user.id) || 0),
+    0
+  ) + 1;
 
-let nextTxId =
-  transactions.reduce((max, tx) => Math.max(max, Number(tx.id) || 0), 0) + 1;
+let nextTransactionId =
+  transactions.reduce(
+    (max, transaction) =>
+      Math.max(max, Number(transaction.id) || 0),
+    0
+  ) + 1;
 
 app.use(express.json({ limit: "32kb" }));
-app.use(express.urlencoded({ extended: true, limit: "32kb" }));
 
-function readSessionSecret() {
-  if (process.env.SESSION_SECRET) {
-    return process.env.SESSION_SECRET.trim();
-  }
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "32kb"
+  })
+);
 
-  const secretFile =
-    process.env.SESSION_SECRET_FILE || "/etc/secrets/SECRET_KEY";
-
-  try {
-    const secret = fs.readFileSync(secretFile, "utf8").trim();
-
-    if (secret) {
-      return secret;
-    }
-  } catch {
-    console.warn(`Could not read session secret from ${secretFile}`);
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "No session secret configured. Set SESSION_SECRET or use /etc/secrets/SECRET_KEY."
-    );
-  }
-
-  console.warn("Using development-only session secret");
-  return "pukku-development-secret";
-}
-
-const sessionSecret = readSessionSecret();
 const isProduction = process.env.NODE_ENV === "production";
 
 app.set("trust proxy", 1);
 
 app.use(
   session({
-    secret: sessionSecret,
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000,
       httpOnly: true,
@@ -118,7 +126,11 @@ app.use(
   })
 );
 
-app.use(express.static(__dirname, { extensions: ["html"] }));
+app.use(
+  express.static(__dirname, {
+    extensions: ["html"]
+  })
+);
 
 function formatPukku(cents) {
   return (
@@ -155,7 +167,8 @@ app.post("/api/register", (req, res) => {
 
   if (!/^[a-z0-9_]{3,24}$/.test(username)) {
     return res.status(400).json({
-      error: "Käyttäjänimi: 3–24 merkkiä, vain a-z, 0-9 ja _"
+      error:
+        "Käyttäjänimi: 3–24 merkkiä, vain a-z, 0-9 ja _"
     });
   }
 
@@ -180,7 +193,19 @@ app.post("/api/register", (req, res) => {
   };
 
   users.push(user);
-  saveJSON(usersFile, users);
+
+  try {
+    saveJSON(USERS_FILE, users);
+  } catch (error) {
+    console.error("Failed to save user:", error.message);
+
+    users.pop();
+    nextUserId--;
+
+    return res.status(500).json({
+      error: "Tilin tallentaminen epäonnistui"
+    });
+  }
 
   res.json({
     success: true,
@@ -201,9 +226,14 @@ app.post("/api/login", (req, res) => {
     });
   }
 
-  const user = users.find(item => item.username === username);
+  const user = users.find(
+    item => item.username === username
+  );
 
-  if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+  if (
+    !user ||
+    !bcrypt.compareSync(password, user.password_hash)
+  ) {
     return res.status(401).json({
       error: "Virheellinen käyttäjänimi tai salasana"
     });
@@ -211,6 +241,11 @@ app.post("/api/login", (req, res) => {
 
   req.session.regenerate(error => {
     if (error) {
+      console.error(
+        "Session regeneration error:",
+        error.message
+      );
+
       return res.status(500).json({
         error: "Istunnon luominen epäonnistui"
       });
@@ -228,7 +263,11 @@ app.post("/api/login", (req, res) => {
 });
 
 app.post("/api/logout", (req, res) => {
-  req.session.destroy(() => {
+  req.session.destroy(error => {
+    if (error) {
+      console.error("Logout error:", error.message);
+    }
+
     res.clearCookie("connect.sid");
 
     res.json({
@@ -238,7 +277,9 @@ app.post("/api/logout", (req, res) => {
 });
 
 app.get("/api/me", requireAuth, (req, res) => {
-  const user = users.find(item => item.id === req.session.userId);
+  const user = users.find(
+    item => item.id === req.session.userId
+  );
 
   if (!user) {
     req.session.destroy(() => {});
@@ -282,40 +323,60 @@ app.get("/api/user/:id", requireAuth, (req, res) => {
 app.get("/api/transactions", requireAuth, (req, res) => {
   const myId = req.session.userId;
 
-  const txs = transactions
-    .filter(tx => tx.from_user === myId || tx.to_user === myId)
+  const result = transactions
+    .filter(
+      transaction =>
+        transaction.from_user === myId ||
+        transaction.to_user === myId
+    )
     .sort(
       (a, b) =>
         new Date(b.created_at).getTime() -
         new Date(a.created_at).getTime()
     )
     .slice(0, 30)
-    .map(tx => {
-      const fromUser = users.find(user => user.id === tx.from_user);
-      const toUser = users.find(user => user.id === tx.to_user);
+    .map(transaction => {
+      const fromUser = users.find(
+        user => user.id === transaction.from_user
+      );
+
+      const toUser = users.find(
+        user => user.id === transaction.to_user
+      );
 
       return {
-        id: tx.id,
-        from_user: tx.from_user,
-        to_user: tx.to_user,
-        from_name: fromUser ? fromUser.username : null,
-        to_name: toUser ? toUser.username : null,
-        amount: tx.amount,
-        amountStr: formatPukku(tx.amount),
-        note: tx.note,
-        created_at: tx.created_at,
-        isOut: tx.from_user === myId
+        id: transaction.id,
+        from_user: transaction.from_user,
+        to_user: transaction.to_user,
+        from_name: fromUser
+          ? fromUser.username
+          : null,
+        to_name: toUser
+          ? toUser.username
+          : null,
+        amount: transaction.amount,
+        amountStr: formatPukku(transaction.amount),
+        note: transaction.note,
+        created_at: transaction.created_at,
+        isOut: transaction.from_user === myId
       };
     });
 
-  res.json(txs);
+  res.json(result);
 });
 
 app.post("/api/transfer", requireAuth, (req, res) => {
   const toId = Number.parseInt(req.body.toId, 10);
-  const rawAmount = String(req.body.amount ?? "").replace(",", ".");
+
+  const rawAmount = String(
+    req.body.amount ?? ""
+  ).replace(",", ".");
+
   const amount = Number(rawAmount);
-  const note = String(req.body.note || "").trim().slice(0, 100);
+
+  const note = String(req.body.note || "")
+    .trim()
+    .slice(0, 100);
 
   if (!Number.isSafeInteger(toId) || toId < 1) {
     return res.status(400).json({
@@ -323,7 +384,11 @@ app.post("/api/transfer", requireAuth, (req, res) => {
     });
   }
 
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 999999.99) {
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0 ||
+    amount > 999999.99
+  ) {
     return res.status(400).json({
       error: "Virheellinen summa"
     });
@@ -337,8 +402,13 @@ app.post("/api/transfer", requireAuth, (req, res) => {
     });
   }
 
-  const sender = users.find(user => user.id === req.session.userId);
-  const receiver = users.find(user => user.id === toId);
+  const sender = users.find(
+    user => user.id === req.session.userId
+  );
+
+  const receiver = users.find(
+    user => user.id === toId
+  );
 
   if (!sender) {
     return res.status(401).json({
@@ -367,8 +437,8 @@ app.post("/api/transfer", requireAuth, (req, res) => {
   sender.balance -= cents;
   receiver.balance += cents;
 
-  const tx = {
-    id: nextTxId++,
+  const transaction = {
+    id: nextTransactionId++,
     from_user: sender.id,
     to_user: receiver.id,
     amount: cents,
@@ -376,18 +446,22 @@ app.post("/api/transfer", requireAuth, (req, res) => {
     created_at: new Date().toISOString()
   };
 
-  transactions.push(tx);
+  transactions.push(transaction);
 
   try {
-    saveJSON(usersFile, users);
-    saveJSON(txsFile, transactions);
+    saveJSON(USERS_FILE, users);
+    saveJSON(TRANSACTIONS_FILE, transactions);
   } catch (error) {
-    console.error("Transfer save error:", error);
+    console.error(
+      "Transfer save error:",
+      error.message
+    );
 
     sender.balance += cents;
     receiver.balance -= cents;
+
     transactions.pop();
-    nextTxId--;
+    nextTransactionId--;
 
     return res.status(500).json({
       error: "Siirron tallennus epäonnistui"
@@ -397,10 +471,19 @@ app.post("/api/transfer", requireAuth, (req, res) => {
   res.json({
     success: true,
     message: "Siirto onnistui",
+    amount: cents,
     amountStr: formatPukku(cents)
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Pukku Pankki käynnissä portissa ${PORT}`);
+app.use("/api", (req, res) => {
+  res.status(404).json({
+    error: "API endpoint not found"
+  });
+});
+
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(
+    `Pukku server running on port ${PORT}`
+  );
 });
