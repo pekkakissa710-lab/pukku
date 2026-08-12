@@ -210,19 +210,9 @@ a{
 <body>
 
 <div id="sleepOverlay">
-
-  <h2>
-    SERVER IS SLEEPING
-  </h2>
-
-  <p>
-    Render-palvelin nukkuu. Herätetään se.
-  </p>
-
-  <button id="refreshBtn">
-    Yritä uudelleen
-  </button>
-
+  <h2>SERVER IS SLEEPING</h2>
+  <p>Render-palvelin nukkuu. Herätetään se.</p>
+  <button id="refreshBtn">Yritä uudelleen</button>
 </div>
 
 <main class="card">
@@ -232,9 +222,7 @@ a{
     Pukku Pankki
   </div>
 
-  <h1>
-    Tervetuloa takaisin.
-  </h1>
+  <h1>Tervetuloa takaisin.</h1>
 
   <p class="subtitle">
     Kirjaudu Pukku-tilillesi jatkaaksesi.
@@ -242,9 +230,7 @@ a{
 
   <form id="form">
 
-    <label for="username">
-      Käyttäjänimi
-    </label>
+    <label for="username">Käyttäjänimi</label>
 
     <input
       id="username"
@@ -255,9 +241,7 @@ a{
       autofocus
     >
 
-    <label for="password">
-      Salasana
-    </label>
+    <label for="password">Salasana</label>
 
     <input
       id="password"
@@ -266,10 +250,7 @@ a{
       required
     >
 
-    <button
-      id="submitBtn"
-      type="submit"
-    >
+    <button id="submitBtn" type="submit">
       Kirjaudu sisään
     </button>
 
@@ -284,253 +265,115 @@ a{
 
   <p class="footer">
     Ei tiliä?
-    <a href="/register.html">
-      Luo tili
-    </a>
+    <a href="/register.html">Luo tili</a>
   </p>
 
 </main>
 
 <script>
-const overlay =
-  document.getElementById("sleepOverlay");
+const API_BASE = "https://pukku-1.onrender.com";
 
-const form =
-  document.getElementById("form");
+const overlay = document.getElementById("sleepOverlay");
+const form = document.getElementById("form");
+const submitButton = document.getElementById("submitBtn");
 
-const submitButton =
-  document.getElementById("submitBtn");
-
-function showToast(
-  message,
-  type = "error"
-) {
-  const toast =
-    document.createElement("div");
-
-  toast.className =
-    `toast ${type}`;
-
-  toast.textContent =
-    message;
-
-  document.body.appendChild(
-    toast
-  );
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3500);
+function showToast(message, type = "error") {
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
 }
 
-async function request(
-  url,
-  options = {},
-  timeout = 15000
-) {
-  const controller =
-    new AbortController();
-
-  const timer =
-    setTimeout(() => {
-      controller.abort();
-    }, timeout);
+async function request(url, options = {}, timeout = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   try {
-
-    const response =
-      await fetch(url, {
-        ...options,
-        signal:
-          controller.signal,
-        credentials:
-          "include",
-        cache:
-          "no-store"
-      });
-
+    const response = await fetch(API_BASE + url, {
+      ...options,
+      signal: controller.signal,
+      credentials: "include",
+      cache: "no-store"
+    });
     clearTimeout(timer);
-
     return response;
-
   } catch (error) {
-
     clearTimeout(timer);
-
     throw error;
   }
 }
 
 async function checkServer() {
   try {
-
-    const response =
-      await request(
-        "/api/health",
-        {},
-        15000
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        "Health check failed"
-      );
-    }
-
-    overlay.style.display =
-      "none";
-
+    const response = await request("/api/health", {}, 15000);
+    if (!response.ok) throw new Error("Health check failed");
+    overlay.style.display = "none";
   } catch {
-
-    /*
-      Render voi olla juuri heräämässä.
-      Älä näytä välittömästi verkkovirhettä.
-    */
-
-    overlay.style.display =
-      "flex";
+    overlay.style.display = "flex";
   }
 }
 
-document
-  .getElementById("refreshBtn")
-  .addEventListener(
-    "click",
-    () => {
-      location.reload();
-    }
-  );
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  location.reload();
+});
 
-form.addEventListener(
-  "submit",
-  async event => {
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-    event.preventDefault();
+  submitButton.disabled = true;
+  submitButton.textContent = "Kirjaudutaan…";
 
-    submitButton.disabled =
-      true;
+  const username = document
+    .getElementById("username")
+    .value.trim()
+    .toLowerCase();
+  const password = document.getElementById("password").value;
 
-    submitButton.textContent =
-      "Kirjaudutaan…";
+  try {
+    const response = await request(
+      "/api/login",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password })
+      },
+      20000
+    );
 
-    const username =
-      document
-        .getElementById("username")
-        .value
-        .trim()
-        .toLowerCase();
-
-    const password =
-      document
-        .getElementById("password")
-        .value;
-
+    let data = {};
     try {
-
-      const response =
-        await request(
-          "/api/login",
-          {
-            method:"POST",
-
-            headers:{
-              "Content-Type":
-                "application/json"
-            },
-
-            body:JSON.stringify({
-              username,
-              password
-            })
-          },
-          20000
-        );
-
-      let data = {};
-
-      try {
-        data =
-          await response.json();
-      } catch {
-        data = {};
-      }
-
-      if (!response.ok) {
-
-        showToast(
-          data.error ||
-          "Kirjautuminen epäonnistui.",
-          "error"
-        );
-
-        submitButton.disabled =
-          false;
-
-        submitButton.textContent =
-          "Kirjaudu sisään";
-
-        return;
-      }
-
-      if (!data.success) {
-
-        showToast(
-          data.error ||
-          "Kirjautuminen epäonnistui.",
-          "error"
-        );
-
-        submitButton.disabled =
-          false;
-
-        submitButton.textContent =
-          "Kirjaudu sisään";
-
-        return;
-      }
-
-      showToast(
-        "Kirjauduttu!",
-        "success"
-      );
-
-      /*
-        Odotetaan vähän, jotta session-cookie
-        ehtii varmasti tallentua selaimeen.
-      */
-
-      setTimeout(() => {
-        window.location.replace("/");
-      }, 500);
-
-    } catch (error) {
-
-      if (
-        error.name ===
-        "AbortError"
-      ) {
-
-        showToast(
-          "Palvelin ei vastannut. Yritä uudelleen.",
-          "error"
-        );
-
-      } else {
-
-        showToast(
-          "Palvelimeen ei saatu yhteyttä. Tarkista internet-yhteys tai yritä uudelleen.",
-          "error"
-        );
-      }
-
-      submitButton.disabled =
-        false;
-
-      submitButton.textContent =
-        "Kirjaudu sisään";
+      data = await response.json();
+    } catch {
+      data = {};
     }
+
+    if (!response.ok || !data.success) {
+      showToast(data.error || "Kirjautuminen epäonnistui.", "error");
+      submitButton.disabled = false;
+      submitButton.textContent = "Kirjaudu sisään";
+      return;
+    }
+
+    showToast("Kirjauduttu!", "success");
+
+    setTimeout(() => {
+      window.location.replace("/");
+    }, 500);
+  } catch (error) {
+    if (error.name === "AbortError") {
+      showToast("Palvelin ei vastannut. Yritä uudelleen.", "error");
+    } else {
+      showToast(
+        "Palvelimeen ei saatu yhteyttä. Tarkista internet-yhteys tai yritä uudelleen.",
+        "error"
+      );
+    }
+
+    submitButton.disabled = false;
+    submitButton.textContent = "Kirjaudu sisään";
   }
-);
+});
 
 checkServer();
 </script>
