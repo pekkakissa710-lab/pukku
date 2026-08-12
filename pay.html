@@ -3,322 +3,705 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Siirrä — Pukku Pankki</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Siirrä — Pukku</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
 <style>
-  :root{
-    --ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;
-    --blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);
-    --text:#10182B;--muted:#7C879E;
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{
-    margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-    background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);
-    font-family:Inter,sans-serif;color:var(--text);padding:24px;
-  }
+:root{
+  --bg:#eef2fa;
+  --card:#fff;
+  --text:#10182b;
+  --muted:#7c879e;
+  --line:rgba(16,24,40,.09);
+  --blue:#3e7bfa;
+  --blue2:#2a5fe0;
+  --red:#ef4444;
+  --green:#10b981;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:
+    radial-gradient(900px 500px at 50% -100px,rgba(62,123,250,.14),transparent 65%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,sans-serif;
+}
+
+.device{
+  width:100%;
+  max-width:410px;
+  min-height:680px;
+  padding:28px;
+  border-radius:32px;
+  border:1px solid var(--line);
+  background:#fff;
+  box-shadow:0 30px 80px -35px rgba(16,24,40,.25);
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+
+.device::after{
+  content:"";
+  position:absolute;
+  width:300px;
+  height:300px;
+  border-radius:50%;
+  background:rgba(62,123,250,.05);
+  right:-170px;
+  top:-130px;
+  pointer-events:none;
+}
+
+.header{
+  position:relative;
+  z-index:2;
+  display:flex;
+  align-items:center;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:var(--muted);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+}
+
+.dot{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 14px rgba(62,123,250,.5);
+}
+
+.back{
+  margin-left:auto;
+  color:var(--muted);
+  text-decoration:none;
+  font-size:13px;
+}
+
+#payView{
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  flex:1;
+}
+
+.receiver{
+  margin-top:28px;
+}
+
+.receiver label{
+  display:block;
+  margin-bottom:8px;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:600;
+}
+
+.receiver input{
+  width:100%;
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#f6f8fc;
+  text-align:center;
+  font:600 16px "Space Grotesk",sans-serif;
+  color:var(--text);
+}
+
+.receiver input:focus{
+  outline:0;
+  border-color:var(--blue);
+  background:#fff;
+}
+
+.receiver-name{
+  height:20px;
+  margin-top:8px;
+  text-align:center;
+  color:var(--blue);
+  font-size:13px;
+}
+
+.amount-wrap{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+.amount-row{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+.amount{
+  font:700 55px "Space Grotesk",sans-serif;
+  letter-spacing:-.05em;
+  font-variant-numeric:tabular-nums;
+}
+
+.amount.placeholder{
+  color:rgba(16,24,40,.22);
+}
+
+.currency{
+  color:var(--muted);
+  font:600 20px "Space Grotesk",sans-serif;
+}
+
+.amount-label{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:12px;
+}
+
+.keypad{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+}
+
+.key{
+  border:1px solid var(--line);
+  border-radius:15px;
+  padding:15px 0;
+  background:#f6f8fc;
+  color:var(--text);
+  font:600 19px "Space Grotesk",sans-serif;
+  cursor:pointer;
+}
+
+.key:active{
+  transform:scale(.94);
+  background:rgba(62,123,250,.1);
+}
+
+.key.func{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.error{
+  display:none;
+  margin-top:12px;
+  padding:11px 14px;
+  border-radius:13px;
+  background:rgba(239,68,68,.08);
+  border:1px solid rgba(239,68,68,.2);
+  color:#b91c1c;
+  text-align:center;
+  font-size:13px;
+}
+
+.pay{
+  width:100%;
+  margin-top:14px;
+  padding:17px;
+  border:0;
+  border-radius:17px;
+  color:white;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  font:600 17px "Space Grotesk",sans-serif;
+  cursor:pointer;
+  box-shadow:0 15px 30px -15px rgba(62,123,250,.7);
+}
+
+.pay:disabled{
+  opacity:.4;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+
+#successView{
+  display:none;
+  position:relative;
+  z-index:2;
+  flex:1;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+}
+
+.success-icon{
+  width:80px;
+  height:80px;
+  display:grid;
+  place-items:center;
+  border-radius:26px;
+  background:rgba(16,185,129,.1);
+  color:var(--green);
+  font-size:42px;
+  font-weight:700;
+}
+
+.success-title{
+  margin-top:22px;
+  font:700 27px "Space Grotesk",sans-serif;
+}
+
+.success-sub{
+  margin-top:8px;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.success-amount{
+  margin-top:17px;
+  padding:9px 16px;
+  border-radius:999px;
+  background:rgba(62,123,250,.08);
+  color:var(--blue);
+  font-size:13px;
+  font-weight:600;
+}
+
+.new{
+  margin-top:25px;
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:11px 18px;
+  background:#fff;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+.dashboard-link{
+  margin-top:14px;
+  color:var(--muted);
+  font-size:13px;
+  text-decoration:none;
+}
+
+#sleepOverlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:30px;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  z-index:999;
+}
+
+#sleepOverlay h2{
+  margin:0 0 10px;
+  font:700 30px "Space Grotesk",sans-serif;
+}
+
+#sleepOverlay p{
+  max-width:340px;
+  color:#94a3b8;
+  line-height:1.5;
+}
+
+#refreshBtn{
+  border:0;
+  border-radius:14px;
+  padding:14px 24px;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  color:white;
+  font:600 15px "Space Grotesk",sans-serif;
+}
+
+@media(max-height:760px){
   .device{
-    position:relative;width:100%;max-width:380px;
-    background:linear-gradient(180deg,var(--panel),#fff);
-    border-radius:32px;padding:32px 28px 28px;
-    border:1px solid var(--line);
-    box-shadow:0 40px 80px -30px rgba(16,24,40,.18);
-    overflow:hidden;min-height:620px;display:flex;flex-direction:column;
-  }
-  .device::before{
-    content:"";position:absolute;inset:0;
-    background-image:linear-gradient(rgba(16,24,40,.028) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(16,24,40,.028) 1px,transparent 1px);
-    background-size:24px 24px;
-    mask-image:radial-gradient(circle at 50% 20%,black,transparent 70%);
-    pointer-events:none;
-  }
-  .eyebrow{
-    font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
-    display:flex;align-items:center;gap:8px;z-index:1;
-  }
-  .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
-  .back{font-size:13px;color:var(--muted);text-decoration:none;margin-left:auto}
-  #payView{display:flex;flex-direction:column;flex:1;z-index:1}
-  .id-row{margin-top:20px}
-  .id-row label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
-  .id-row input{
-    width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;
-    font-size:16px;font-family:'Space Grotesk',sans-serif;background:#F6F8FC;text-align:center;
-  }
-  .id-row input:focus{outline:none;border-color:var(--blue);background:#fff}
-  .receiver-name{font-size:13px;color:var(--blue);text-align:center;margin-top:6px;min-height:18px}
-  .amount-wrap{margin-top:20px;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
-  .currency-row{display:flex;align-items:baseline;gap:6px;font-family:'Space Grotesk',sans-serif}
-  .amount{font-size:52px;font-weight:700;letter-spacing:-0.02em;line-height:1;font-variant-numeric:tabular-nums}
-  .amount.placeholder{color:rgba(16,24,40,.22)}
-  .currency{font-size:22px;font-weight:600;color:var(--muted)}
-  .amount-label{font-size:12px;color:var(--muted)}
-  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
-  .key{
-    appearance:none;border:1px solid var(--line);background:#F6F8FC;color:var(--text);
-    font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:600;
-    padding:14px 0;border-radius:14px;cursor:pointer;
-  }
-  .key:active{transform:scale(.94);background:rgba(62,123,250,.12)}
-  .key.func{color:var(--muted);font-size:14px}
-  .pay-btn{
-    margin-top:18px;width:100%;border:none;border-radius:18px;padding:18px 0;
-    font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#fff;
-    background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;
-    box-shadow:0 12px 30px -10px var(--blue-glow);
-  }
-  .pay-btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
-  .pay-btn.loading .spinner{display:inline-block}
-  .spinner{
-    width:18px;height:18px;border-radius:50%;
-    border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;
-    display:none;animation:spin .7s linear infinite;vertical-align:middle;margin-right:8px;
-  }
-  @keyframes spin{to{transform:rotate(360deg)}}
-  #successView{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:1}
-  .accepted-title{margin-top:20px;font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700}
-  .accepted-sub{margin-top:8px;font-size:14px;color:var(--muted)}
-  .accepted-amount{
-    margin-top:16px;font-family:'Space Grotesk',sans-serif;font-size:15px;color:var(--blue);
-    background:rgba(62,123,250,.1);border:1px solid rgba(62,123,250,.25);
-    padding:8px 16px;border-radius:999px;
-  }
-  .new-payment{
-    margin-top:28px;background:none;border:1px solid var(--line);color:var(--muted);
-    font-size:13px;padding:11px 20px;border-radius:12px;cursor:pointer;
-  }
-  .error-box{
-    background:rgba(239,68,68,.1);color:#B91C1C;border:1px solid rgba(239,68,68,.25);
-    padding:10px 14px;border-radius:12px;font-size:13px;margin-top:12px;display:none;text-align:center;
+    min-height:calc(100vh - 20px);
   }
 
-  /* FULL SCREEN SLEEP OVERLAY */
-  #sleepOverlay{
-    position:fixed;inset:0;z-index:9999;
-    background:#0f172a;
-    display:none;flex-direction:column;align-items:center;justify-content:center;
-    color:#fff;text-align:center;padding:32px;
-    font-family:'Space Grotesk',sans-serif;
+  .amount{
+    font-size:45px;
   }
-  #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
-  #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
-  #sleepOverlay button{
-    padding:14px 28px;border:none;border-radius:14px;
-    background:linear-gradient(135deg,#3E7BFA,#2A5FE0);
-    color:#fff;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;
-    cursor:pointer;box-shadow:0 10px 25px -8px rgba(62,123,250,.4);
+
+  .key{
+    padding:11px 0;
   }
+}
 </style>
 </head>
+
 <body>
 
-<!-- SLEEP OVERLAY -->
 <div id="sleepOverlay">
-  <h1>SERVER IS SLEEPING</h1>
-  <p>Render free-tier nukkuu. Paina nappia herättääksesi palvelimen (kestää 30–60 sekuntia).</p>
-  <button id="refreshBtn">Refresh</button>
+  <h2>SERVER IS SLEEPING</h2>
+  <p>Render-palvelin nukkuu. Herätetään se.</p>
+  <button id="refreshBtn">Yritä uudelleen</button>
 </div>
 
-<div class="device">
-  <div class="eyebrow">
-    <span class="dot"></span>Pukku Pankki
-    <a href="/" class="back">← Takaisin</a>
-  </div>
+<main class="device">
 
-  <div id="payView">
-    <div class="id-row">
-      <label>Vastaanottajan ID</label>
-      <input type="number" id="toId" placeholder="esim. 2" min="1">
+  <header class="header">
+    <div class="brand">
+      <span class="dot"></span>
+      Pukku Pankki
+    </div>
+
+    <a class="back" href="/">
+      ← Takaisin
+    </a>
+  </header>
+
+  <section id="payView">
+
+    <div class="receiver">
+
+      <label for="toId">
+        Vastaanottajan ID
+      </label>
+
+      <input
+        id="toId"
+        type="number"
+        min="1"
+        inputmode="numeric"
+        placeholder="esim. 2"
+      >
+
       <div class="receiver-name" id="receiverName"></div>
+
     </div>
 
     <div class="amount-wrap">
-      <div class="currency-row">
-        <span class="amount placeholder" id="amountDisplay">0,00</span>
-        <span class="currency">pukku</span>
+
+      <div class="amount-row">
+        <span class="amount placeholder" id="amount">
+          0,00
+        </span>
+
+        <span class="currency">
+          pukku
+        </span>
       </div>
-      <div class="amount-label">Syötä summa</div>
+
+      <div class="amount-label">
+        Syötä summa
+      </div>
+
     </div>
 
     <div class="keypad" id="keypad">
-      <button class="key" data-k="1">1</button>
-      <button class="key" data-k="2">2</button>
-      <button class="key" data-k="3">3</button>
-      <button class="key" data-k="4">4</button>
-      <button class="key" data-k="5">5</button>
-      <button class="key" data-k="6">6</button>
-      <button class="key" data-k="7">7</button>
-      <button class="key" data-k="8">8</button>
-      <button class="key" data-k="9">9</button>
-      <button class="key func" data-k="clear">Tyhjennä</button>
-      <button class="key" data-k="0">0</button>
-      <button class="key func" data-k="back">⌫</button>
+
+      <button class="key" data-key="1">1</button>
+      <button class="key" data-key="2">2</button>
+      <button class="key" data-key="3">3</button>
+
+      <button class="key" data-key="4">4</button>
+      <button class="key" data-key="5">5</button>
+      <button class="key" data-key="6">6</button>
+
+      <button class="key" data-key="7">7</button>
+      <button class="key" data-key="8">8</button>
+      <button class="key" data-key="9">9</button>
+
+      <button class="key func" data-key="clear">
+        Tyhjennä
+      </button>
+
+      <button class="key" data-key="0">
+        0
+      </button>
+
+      <button class="key func" data-key="back">
+        ⌫
+      </button>
+
     </div>
 
-    <div class="error-box" id="errorBox"></div>
+    <div class="error" id="error"></div>
 
-    <button class="pay-btn" id="payBtn" disabled>
-      <span class="spinner"></span>
-      <span id="payLabel">Siirrä</span>
+    <button class="pay" id="payButton" disabled>
+      Siirrä pukkuja
     </button>
-  </div>
 
-  <div id="successView">
-    <div style="font-size:64px">✓</div>
-    <div class="accepted-title">Siirto onnistui!</div>
-    <div class="accepted-sub">Pukut siirretty</div>
-    <div class="accepted-amount" id="successAmount">0,00 pukku</div>
-    <button class="new-payment" id="newPayment">Uusi siirto</button>
-    <br>
-    <a href="/" style="font-size:13px;color:var(--muted);margin-top:12px;display:inline-block">← Takaisin dashboardiin</a>
-  </div>
-</div>
+  </section>
+
+  <section id="successView">
+
+    <div class="success-icon">
+      ✓
+    </div>
+
+    <div class="success-title">
+      Siirto onnistui!
+    </div>
+
+    <div class="success-sub">
+      Pukut siirrettiin onnistuneesti.
+    </div>
+
+    <div class="success-amount" id="successAmount">
+      0,00 pukku
+    </div>
+
+    <button class="new" id="newPayment">
+      Uusi siirto
+    </button>
+
+    <a class="dashboard-link" href="/">
+      ← Dashboard
+    </a>
+
+  </section>
+
+</main>
 
 <script>
-  const overlay = document.getElementById('sleepOverlay');
+const overlay = document.getElementById("sleepOverlay");
 
-  async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    
-    try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal,
-        credentials: 'include'
-      });
-      clearTimeout(timeoutId);
-      return response;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      throw err;
-    }
-  }
+let cents = 0;
 
-  document.getElementById('refreshBtn').onclick = () => {
-    overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
-    fetchWithTimeout('/api/health', {}, 6000).catch(() => {});
-    setTimeout(() => location.reload(), 4000);
-  };
+function formatCents(value) {
+  return (value / 100).toLocaleString("fi-FI", {
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
 
-  // Auth + server check
-  fetchWithTimeout('/api/me', {}, 5000)
-    .then(r => {
-      if (r.status === 401) location.href = 'login.html';
-      else overlay.style.display = 'none';
-    })
-    .catch(err => {
-      if (err.name === 'AbortError' || err instanceof TypeError) {
-        overlay.style.display = 'flex';
-      }
+async function request(url, options = {}, timeout = 7000) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal:controller.signal,
+      credentials:"include"
     });
 
-  let cents = 0;
-  const amountDisplay = document.getElementById('amountDisplay');
-  const payBtn = document.getElementById('payBtn');
-  const payLabel = document.getElementById('payLabel');
-  const toIdInput = document.getElementById('toId');
-  const receiverName = document.getElementById('receiverName');
-  const errorBox = document.getElementById('errorBox');
+    clearTimeout(timer);
 
-  function formatCents(c){
-    return (c/100).toLocaleString('fi-FI',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return response;
+  } catch(error) {
+    clearTimeout(timer);
+    throw error;
   }
+}
 
-  function render(){
-    amountDisplay.textContent = formatCents(cents);
-    amountDisplay.classList.toggle('placeholder', cents === 0);
-    updateBtn();
+async function checkAuth() {
+  try {
+    const response = await request("/api/me");
+
+    if (response.status === 401) {
+      location.href = "/login.html";
+      return;
+    }
+
+    if (!response.ok) {
+      throw new Error();
+    }
+
+    overlay.style.display = "none";
+
+  } catch(error) {
+    overlay.style.display = "flex";
   }
+}
 
-  function updateBtn(){
-    payBtn.disabled = cents === 0 || !toIdInput.value;
-  }
+function renderAmount() {
+  const amount = document.getElementById("amount");
 
-  // Tarkista vastaanottaja ID:llä
-  let checkTimer;
-  toIdInput.addEventListener('input', () => {
-    updateBtn();
-    receiverName.textContent = '';
-    clearTimeout(checkTimer);
-    const id = toIdInput.value;
-    if (!id) return;
-    checkTimer = setTimeout(async () => {
-      try {
-        const res = await fetchWithTimeout('/api/user/' + id, {}, 5000);
-        if (res.ok) {
-          const u = await res.json();
-          receiverName.textContent = u.username;
-        } else {
-          receiverName.textContent = 'Käyttäjää ei löydy';
-        }
-      } catch (err) {
-        if (err.name === 'AbortError' || err instanceof TypeError) {
-          overlay.style.display = 'flex';
-        }
-      }
-    }, 400);
-  });
+  amount.textContent = formatCents(cents);
+  amount.classList.toggle("placeholder", cents === 0);
 
-  document.getElementById('keypad').addEventListener('click', (e) => {
-    const btn = e.target.closest('.key');
-    if (!btn) return;
-    const k = btn.dataset.k;
-    if (k === 'clear') cents = 0;
-    else if (k === 'back') cents = Math.floor(cents / 10);
-    else if (cents < 99999999) cents = cents * 10 + parseInt(k, 10);
-    render();
-  });
+  updatePayButton();
+}
 
-  payBtn.addEventListener('click', async () => {
-    if (payBtn.disabled) return;
-    errorBox.style.display = 'none';
-    payBtn.classList.add('loading');
-    payLabel.textContent = 'Käsitellään…';
-    payBtn.disabled = true;
+function updatePayButton() {
+  const id = document.getElementById("toId").value;
+  const button = document.getElementById("payButton");
+
+  button.disabled = cents <= 0 || !id;
+}
+
+let lookupTimer;
+
+document.getElementById("toId").addEventListener("input", () => {
+  const id = document.getElementById("toId").value;
+  const name = document.getElementById("receiverName");
+
+  name.textContent = "";
+
+  clearTimeout(lookupTimer);
+
+  updatePayButton();
+
+  if (!id) return;
+
+  lookupTimer = setTimeout(async () => {
 
     try {
-      const res = await fetchWithTimeout('/api/transfer', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-          toId: toIdInput.value,
-          amount: cents / 100
-        })
-      }, 5000);
+      const response = await request(`/api/user/${encodeURIComponent(id)}`);
 
-      const data = await res.json();
-      if (data.success) {
-        document.getElementById('successAmount').textContent = formatCents(cents) + ' pukku';
-        document.getElementById('payView').style.display = 'none';
-        document.getElementById('successView').style.display = 'flex';
+      if (response.ok) {
+        const user = await response.json();
+        name.textContent = user.username;
       } else {
-        errorBox.textContent = data.error || 'Siirto epäonnistui';
-        errorBox.style.display = 'block';
-        payBtn.classList.remove('loading');
-        payLabel.textContent = 'Siirrä';
-        updateBtn();
+        name.textContent = "Käyttäjää ei löydy";
       }
-    } catch (err) {
-      if (err.name === 'AbortError' || err instanceof TypeError) {
-        overlay.style.display = 'flex';
+
+    } catch(error) {
+      if (
+        error.name === "AbortError" ||
+        error instanceof TypeError
+      ) {
+        overlay.style.display = "flex";
       }
     }
-  });
 
-  document.getElementById('newPayment').onclick = () => {
+  }, 350);
+});
+
+document.getElementById("keypad").addEventListener("click", event => {
+
+  const button = event.target.closest(".key");
+
+  if (!button) return;
+
+  const key = button.dataset.key;
+
+  if (key === "clear") {
     cents = 0;
-    toIdInput.value = '';
-    receiverName.textContent = '';
-    render();
-    payBtn.classList.remove('loading');
-    payLabel.textContent = 'Siirrä';
-    document.getElementById('successView').style.display = 'none';
-    document.getElementById('payView').style.display = 'flex';
-  };
+  }
 
-  render();
+  else if (key === "back") {
+    cents = Math.floor(cents / 10);
+  }
+
+  else {
+    const digit = Number(key);
+
+    if (
+      Number.isInteger(digit) &&
+      cents < 99999999
+    ) {
+      cents = cents * 10 + digit;
+    }
+  }
+
+  renderAmount();
+});
+
+document.getElementById("payButton").addEventListener("click", async () => {
+
+  const button = document.getElementById("payButton");
+  const error = document.getElementById("error");
+  const toId = document.getElementById("toId").value;
+
+  if (button.disabled) return;
+
+  error.style.display = "none";
+
+  button.disabled = true;
+  button.textContent = "Käsitellään…";
+
+  try {
+
+    const response = await request("/api/transfer", {
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body:JSON.stringify({
+        toId,
+        amount:cents / 100
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+
+      error.textContent =
+        data.error || "Siirto epäonnistui";
+
+      error.style.display = "block";
+
+      button.textContent = "Siirrä pukkuja";
+
+      updatePayButton();
+
+      return;
+    }
+
+    document.getElementById("successAmount").textContent =
+      formatCents(cents) + " pukku";
+
+    document.getElementById("payView").style.display = "none";
+    document.getElementById("successView").style.display = "flex";
+
+  } catch(error) {
+
+    if (
+      error.name === "AbortError" ||
+      error instanceof TypeError
+    ) {
+      overlay.style.display = "flex";
+    } else {
+      document.getElementById("error").textContent =
+        "Verkkovirhe. Yritä uudelleen.";
+
+      document.getElementById("error").style.display = "block";
+    }
+
+    button.textContent = "Siirrä pukkuja";
+    updatePayButton();
+  }
+});
+
+document.getElementById("newPayment").addEventListener("click", () => {
+
+  cents = 0;
+
+  document.getElementById("toId").value = "";
+  document.getElementById("receiverName").textContent = "";
+  document.getElementById("error").style.display = "none";
+
+  document.getElementById("successView").style.display = "none";
+  document.getElementById("payView").style.display = "flex";
+
+  document.getElementById("payButton").textContent =
+    "Siirrä pukkuja";
+
+  renderAmount();
+});
+
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  location.reload();
+});
+
+renderAmount();
+checkAuth();
 </script>
+
 </body>
 </html>
