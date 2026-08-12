@@ -286,35 +286,29 @@ a{
 </main>
 
 <script>
+const API_BASE = "https://pukku-1.onrender.com";
+
 const overlay = document.getElementById("sleepOverlay");
 
 function toast(message, type = "error") {
   const el = document.createElement("div");
-
   el.className = `toast ${type}`;
   el.textContent = message;
-
   document.body.appendChild(el);
-
   setTimeout(() => el.remove(), 3500);
 }
 
 async function request(url, options = {}, timeout = 7000) {
   const controller = new AbortController();
-
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, timeout);
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(API_BASE + url, {
       ...options,
       signal: controller.signal,
       credentials: "include"
     });
-
     clearTimeout(timer);
-
     return response;
   } catch (error) {
     clearTimeout(timer);
@@ -337,23 +331,20 @@ document.getElementById("refreshBtn").onclick = () => {
 
 checkServer();
 
-document.getElementById("form").addEventListener("submit", async event => {
+document.getElementById("form").addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const button = document.getElementById("submitBtn");
-
   button.disabled = true;
   button.textContent = "Luodaan tili…";
 
   try {
     const response = await request("/api/register", {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        username:document.getElementById("username").value,
-        password:document.getElementById("password").value
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: document.getElementById("username").value,
+        password: document.getElementById("password").value
       })
     });
 
@@ -361,10 +352,8 @@ document.getElementById("form").addEventListener("submit", async event => {
 
     if (!response.ok || !data.success) {
       toast(data.error || "Rekisteröinti epäonnistui");
-
       button.disabled = false;
       button.textContent = "Luo tili";
-
       return;
     }
 
@@ -373,7 +362,6 @@ document.getElementById("form").addEventListener("submit", async event => {
     setTimeout(() => {
       location.href = "/login.html";
     }, 500);
-
   } catch (error) {
     if (error.name === "AbortError" || error instanceof TypeError) {
       overlay.style.display = "flex";
