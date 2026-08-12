@@ -363,18 +363,14 @@ body{
       Pukku Pankki
     </div>
 
-    <a class="back" href="/">
-      ← Takaisin
-    </a>
+    <a class="back" href="/">← Takaisin</a>
   </header>
 
   <section id="payView">
 
     <div class="receiver">
 
-      <label for="toId">
-        Vastaanottajan ID
-      </label>
+      <label for="toId">Vastaanottajan ID</label>
 
       <input
         id="toId"
@@ -391,18 +387,11 @@ body{
     <div class="amount-wrap">
 
       <div class="amount-row">
-        <span class="amount placeholder" id="amount">
-          0,00
-        </span>
-
-        <span class="currency">
-          pukku
-        </span>
+        <span class="amount placeholder" id="amount">0,00</span>
+        <span class="currency">pukku</span>
       </div>
 
-      <div class="amount-label">
-        Syötä summa
-      </div>
+      <div class="amount-label">Syötä summa</div>
 
     </div>
 
@@ -420,17 +409,9 @@ body{
       <button class="key" data-key="8">8</button>
       <button class="key" data-key="9">9</button>
 
-      <button class="key func" data-key="clear">
-        Tyhjennä
-      </button>
-
-      <button class="key" data-key="0">
-        0
-      </button>
-
-      <button class="key func" data-key="back">
-        ⌫
-      </button>
+      <button class="key func" data-key="clear">Tyhjennä</button>
+      <button class="key" data-key="0">0</button>
+      <button class="key func" data-key="back">⌫</button>
 
     </div>
 
@@ -444,64 +425,49 @@ body{
 
   <section id="successView">
 
-    <div class="success-icon">
-      ✓
-    </div>
+    <div class="success-icon">✓</div>
 
-    <div class="success-title">
-      Siirto onnistui!
-    </div>
+    <div class="success-title">Siirto onnistui!</div>
 
-    <div class="success-sub">
-      Pukut siirrettiin onnistuneesti.
-    </div>
+    <div class="success-sub">Pukut siirrettiin onnistuneesti.</div>
 
-    <div class="success-amount" id="successAmount">
-      0,00 pukku
-    </div>
+    <div class="success-amount" id="successAmount">0,00 pukku</div>
 
-    <button class="new" id="newPayment">
-      Uusi siirto
-    </button>
+    <button class="new" id="newPayment">Uusi siirto</button>
 
-    <a class="dashboard-link" href="/">
-      ← Dashboard
-    </a>
+    <a class="dashboard-link" href="/">← Dashboard</a>
 
   </section>
 
 </main>
 
 <script>
+const API_BASE = "https://pukku-1.onrender.com";
+
 const overlay = document.getElementById("sleepOverlay");
 
 let cents = 0;
 
 function formatCents(value) {
   return (value / 100).toLocaleString("fi-FI", {
-    minimumFractionDigits:2,
-    maximumFractionDigits:2
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   });
 }
 
 async function request(url, options = {}, timeout = 7000) {
   const controller = new AbortController();
-
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, timeout);
+  const timer = setTimeout(() => controller.abort(), timeout);
 
   try {
-    const response = await fetch(url, {
+    const response = await fetch(API_BASE + url, {
       ...options,
-      signal:controller.signal,
-      credentials:"include"
+      signal: controller.signal,
+      credentials: "include"
     });
-
     clearTimeout(timer);
-
     return response;
-  } catch(error) {
+  } catch (error) {
     clearTimeout(timer);
     throw error;
   }
@@ -516,30 +482,24 @@ async function checkAuth() {
       return;
     }
 
-    if (!response.ok) {
-      throw new Error();
-    }
+    if (!response.ok) throw new Error();
 
     overlay.style.display = "none";
-
-  } catch(error) {
+  } catch {
     overlay.style.display = "flex";
   }
 }
 
 function renderAmount() {
   const amount = document.getElementById("amount");
-
   amount.textContent = formatCents(cents);
   amount.classList.toggle("placeholder", cents === 0);
-
   updatePayButton();
 }
 
 function updatePayButton() {
   const id = document.getElementById("toId").value;
   const button = document.getElementById("payButton");
-
   button.disabled = cents <= 0 || !id;
 }
 
@@ -550,15 +510,12 @@ document.getElementById("toId").addEventListener("input", () => {
   const name = document.getElementById("receiverName");
 
   name.textContent = "";
-
   clearTimeout(lookupTimer);
-
   updatePayButton();
 
   if (!id) return;
 
   lookupTimer = setTimeout(async () => {
-
     try {
       const response = await request(`/api/user/${encodeURIComponent(id)}`);
 
@@ -568,42 +525,27 @@ document.getElementById("toId").addEventListener("input", () => {
       } else {
         name.textContent = "Käyttäjää ei löydy";
       }
-
-    } catch(error) {
-      if (
-        error.name === "AbortError" ||
-        error instanceof TypeError
-      ) {
+    } catch (error) {
+      if (error.name === "AbortError" || error instanceof TypeError) {
         overlay.style.display = "flex";
       }
     }
-
   }, 350);
 });
 
-document.getElementById("keypad").addEventListener("click", event => {
-
+document.getElementById("keypad").addEventListener("click", (event) => {
   const button = event.target.closest(".key");
-
   if (!button) return;
 
   const key = button.dataset.key;
 
   if (key === "clear") {
     cents = 0;
-  }
-
-  else if (key === "back") {
+  } else if (key === "back") {
     cents = Math.floor(cents / 10);
-  }
-
-  else {
+  } else {
     const digit = Number(key);
-
-    if (
-      Number.isInteger(digit) &&
-      cents < 99999999
-    ) {
+    if (Number.isInteger(digit) && cents < 99999999) {
       cents = cents * 10 + digit;
     }
   }
@@ -612,7 +554,6 @@ document.getElementById("keypad").addEventListener("click", event => {
 });
 
 document.getElementById("payButton").addEventListener("click", async () => {
-
   const button = document.getElementById("payButton");
   const error = document.getElementById("error");
   const toId = document.getElementById("toId").value;
@@ -620,36 +561,26 @@ document.getElementById("payButton").addEventListener("click", async () => {
   if (button.disabled) return;
 
   error.style.display = "none";
-
   button.disabled = true;
   button.textContent = "Käsitellään…";
 
   try {
-
     const response = await request("/api/transfer", {
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         toId,
-        amount:cents / 100
+        amount: cents / 100
       })
     });
 
     const data = await response.json();
 
     if (!response.ok || !data.success) {
-
-      error.textContent =
-        data.error || "Siirto epäonnistui";
-
+      error.textContent = data.error || "Siirto epäonnistui";
       error.style.display = "block";
-
       button.textContent = "Siirrä pukkuja";
-
       updatePayButton();
-
       return;
     }
 
@@ -658,18 +589,12 @@ document.getElementById("payButton").addEventListener("click", async () => {
 
     document.getElementById("payView").style.display = "none";
     document.getElementById("successView").style.display = "flex";
-
-  } catch(error) {
-
-    if (
-      error.name === "AbortError" ||
-      error instanceof TypeError
-    ) {
+  } catch (err) {
+    if (err.name === "AbortError" || err instanceof TypeError) {
       overlay.style.display = "flex";
     } else {
       document.getElementById("error").textContent =
         "Verkkovirhe. Yritä uudelleen.";
-
       document.getElementById("error").style.display = "block";
     }
 
@@ -679,19 +604,13 @@ document.getElementById("payButton").addEventListener("click", async () => {
 });
 
 document.getElementById("newPayment").addEventListener("click", () => {
-
   cents = 0;
-
   document.getElementById("toId").value = "";
   document.getElementById("receiverName").textContent = "";
   document.getElementById("error").style.display = "none";
-
   document.getElementById("successView").style.display = "none";
   document.getElementById("payView").style.display = "flex";
-
-  document.getElementById("payButton").textContent =
-    "Siirrä pukkuja";
-
+  document.getElementById("payButton").textContent = "Siirrä pukkuja";
   renderAmount();
 });
 
