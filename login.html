@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Kirjaudu — Pukku Pankki{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="eyebrow"><span class="dot"></span>Pukku Pankki</div>
+  <h1>Kirjaudu sisään</h1>
+  <p class="muted" style="margin-bottom:24px">Demo-tilit: alice / alice123 · bob / bob123</p>
+
+  <form method="post">
+    <label for="username">Käyttäjänimi</label>
+    <input type="text" id="username" name="username" required autocomplete="username" autofocus>
+
+    <label for="password">Salasana</label>
+    <input type="password" id="password" name="password" required autocomplete="current-password">
+
+    <button type="submit" class="btn btn-primary">Kirjaudu</button>
+  </form>
+
+  <p style="text-align:center; margin-top:20px; font-size:14px;">
+    Ei tiliä? <a href="{{ url_for('register') }}">Rekisteröidy</a>
+  </p>
+</div>
+{% endblock %}
