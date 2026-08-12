@@ -1,167 +1,660 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pukku Pankki</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    :root{--ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;--blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);--text:#10182B;--muted:#7C879E;--success:#10B981;--error:#EF4444}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);font-family:Inter,sans-serif;color:var(--text)}
-    .container{max-width:480px;margin:0 auto}
-    .card{background:var(--panel);border-radius:24px;padding:28px 24px;border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(16,24,40,.15);margin-bottom:20px}
-    .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
-    .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);box-shadow:0 0 8px var(--blue-glow)}
-    .nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-    .nav a{font-size:13px;color:var(--muted);text-decoration:none;cursor:pointer}
-    .balance-big{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;margin:8px 0 4px}
-    .muted{color:var(--muted);font-size:14px}
-    h2{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:0 0 16px}
-    .btn{display:block;width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;text-decoration:none}
-    .tx{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
-    .tx:last-child{border-bottom:none}
-    .out{color:var(--error)}.in{color:var(--success)}
-    .id-badge{font-size:12px;background:rgba(62,123,250,.1);color:var(--blue);padding:4px 10px;border-radius:999px;display:inline-block;margin-top:6px}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pukku — Dashboard</title>
 
-    .error-popup{position:fixed;bottom:20px;right:20px;background:var(--error);color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;max-width:300px;box-shadow:0 10px 30px rgba(239,68,68,.3);animation:slideIn 0.3s ease;z-index:10000}
-    .success-popup{position:fixed;bottom:20px;right:20px;background:var(--success);color:#fff;padding:16px 24px;border-radius:12px;font-size:14px;max-width:300px;box-shadow:0 10px 30px rgba(16,185,129,.3);animation:slideIn 0.3s ease;z-index:10000}
-    @keyframes slideIn{from{transform:translateX(400px);opacity:0}to{transform:translateX(0);opacity:1}}
-    @keyframes slideOut{to{transform:translateX(400px);opacity:0}}
-    .popup.removing{animation:slideOut 0.3s ease}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 
-    #sleepOverlay{
-      position:fixed;inset:0;z-index:9999;background:#0f172a;
-      display:none;flex-direction:column;align-items:center;justify-content:center;
-      color:#fff;text-align:center;padding:32px;font-family:'Space Grotesk',sans-serif;
-    }
-    #sleepOverlay h1{font-size:28px;margin:0 0 12px;letter-spacing:.04em}
-    #sleepOverlay p{color:#94a3b8;font-size:15px;margin:0 0 28px;max-width:320px;line-height:1.5}
-    #sleepOverlay button{
-      padding:14px 28px;border:none;border-radius:14px;
-      background:linear-gradient(135deg,#3E7BFA,#2A5FE0);color:#fff;
-      font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;cursor:pointer;
-    }
-  </style>
+<style>
+:root{
+  --bg:#eef2fa;
+  --card:#ffffff;
+  --text:#10182b;
+  --muted:#7c879e;
+  --line:rgba(16,24,40,.08);
+  --blue:#3e7bfa;
+  --blue2:#2a5fe0;
+  --green:#10b981;
+  --red:#ef4444;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(900px 500px at 50% -100px,rgba(62,123,250,.14),transparent 65%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,sans-serif;
+}
+
+.app{
+  width:min(1080px,100%);
+  margin:auto;
+  padding:24px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:24px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family:"Space Grotesk",sans-serif;
+  font-weight:700;
+  font-size:20px;
+}
+
+.brand-dot{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:var(--blue);
+  box-shadow:0 0 16px rgba(62,123,250,.55);
+}
+
+.logout{
+  border:0;
+  background:transparent;
+  color:var(--muted);
+  font:500 13px Inter,sans-serif;
+  cursor:pointer;
+}
+
+.layout{
+  display:grid;
+  grid-template-columns:1.35fr .65fr;
+  gap:20px;
+}
+
+.card{
+  background:rgba(255,255,255,.94);
+  border:1px solid var(--line);
+  border-radius:28px;
+  box-shadow:0 24px 70px -35px rgba(16,24,40,.22);
+}
+
+.balance-card{
+  padding:32px;
+  min-height:290px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+  position:relative;
+}
+
+.balance-card::after{
+  content:"";
+  position:absolute;
+  width:260px;
+  height:260px;
+  border-radius:50%;
+  background:rgba(62,123,250,.08);
+  right:-100px;
+  top:-100px;
+}
+
+.label{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.greeting{
+  margin-top:8px;
+  font:600 20px "Space Grotesk",sans-serif;
+}
+
+.balance{
+  margin-top:22px;
+  font:700 clamp(42px,7vw,64px) "Space Grotesk",sans-serif;
+  letter-spacing:-.045em;
+}
+
+.account-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:24px;
+}
+
+.id{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 12px;
+  border-radius:999px;
+  background:rgba(62,123,250,.09);
+  color:var(--blue);
+  font-size:12px;
+  font-weight:600;
+}
+
+.copy{
+  border:0;
+  border-radius:10px;
+  padding:8px 11px;
+  background:#f2f5fa;
+  color:var(--muted);
+  cursor:pointer;
+}
+
+.actions{
+  padding:24px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.actions h2{
+  margin:0 0 8px;
+  font:700 22px "Space Grotesk",sans-serif;
+}
+
+.actions p{
+  margin:0 0 20px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+}
+
+.primary{
+  width:100%;
+  border:0;
+  border-radius:16px;
+  padding:16px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  font:600 16px "Space Grotesk",sans-serif;
+  cursor:pointer;
+  box-shadow:0 14px 30px -15px rgba(62,123,250,.7);
+  text-decoration:none;
+  text-align:center;
+}
+
+.transactions{
+  margin-top:20px;
+  padding:28px;
+}
+
+.section-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.section-head h2{
+  margin:0;
+  font:700 22px "Space Grotesk",sans-serif;
+}
+
+.status{
+  color:var(--green);
+  font-size:12px;
+  font-weight:600;
+}
+
+.tx{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:15px 0;
+  border-bottom:1px solid var(--line);
+}
+
+.tx:last-child{
+  border-bottom:0;
+}
+
+.tx-icon{
+  width:42px;
+  height:42px;
+  flex:0 0 42px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  font-weight:700;
+}
+
+.tx-icon.in{
+  background:rgba(16,185,129,.1);
+  color:var(--green);
+}
+
+.tx-icon.out{
+  background:rgba(239,68,68,.1);
+  color:var(--red);
+}
+
+.tx-info{
+  flex:1;
+  min-width:0;
+}
+
+.tx-name{
+  font-weight:600;
+  font-size:14px;
+}
+
+.tx-meta{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:4px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.tx-amount{
+  font:600 14px "Space Grotesk",sans-serif;
+  white-space:nowrap;
+}
+
+.tx-amount.in{
+  color:var(--green);
+}
+
+.tx-amount.out{
+  color:var(--red);
+}
+
+.empty{
+  padding:35px 10px;
+  text-align:center;
+  color:var(--muted);
+  font-size:14px;
+}
+
+.loading{
+  color:var(--muted);
+  padding:25px 0;
+}
+
+.toast{
+  position:fixed;
+  right:20px;
+  bottom:20px;
+  max-width:320px;
+  padding:14px 18px;
+  border-radius:14px;
+  color:white;
+  font-size:14px;
+  box-shadow:0 15px 40px rgba(0,0,0,.18);
+  animation:toastIn .25s ease;
+  z-index:100;
+}
+
+.toast.success{
+  background:var(--green);
+}
+
+.toast.error{
+  background:var(--red);
+}
+
+@keyframes toastIn{
+  from{
+    opacity:0;
+    transform:translateY(15px);
+  }
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
+
+#sleepOverlay{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  padding:30px;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  z-index:999;
+}
+
+#sleepOverlay h1{
+  margin:0 0 10px;
+  font:700 30px "Space Grotesk",sans-serif;
+}
+
+#sleepOverlay p{
+  max-width:360px;
+  color:#94a3b8;
+  line-height:1.5;
+}
+
+#refreshBtn{
+  border:0;
+  border-radius:14px;
+  padding:14px 25px;
+  color:white;
+  background:linear-gradient(135deg,var(--blue),var(--blue2));
+  font:600 15px "Space Grotesk",sans-serif;
+  cursor:pointer;
+}
+
+@media(max-width:760px){
+  .app{
+    padding:16px;
+  }
+
+  .layout{
+    grid-template-columns:1fr;
+  }
+
+  .balance-card{
+    min-height:270px;
+    padding:25px;
+  }
+
+  .transactions{
+    padding:22px;
+  }
+}
+
+@media(max-width:420px){
+  .topbar{
+    margin-bottom:16px;
+  }
+
+  .balance{
+    font-size:42px;
+  }
+
+  .tx{
+    gap:10px;
+  }
+
+  .tx-icon{
+    width:38px;
+    height:38px;
+    flex-basis:38px;
+  }
+}
+</style>
 </head>
+
 <body>
-  <div id="sleepOverlay">
-    <h1>SERVER IS SLEEPING</h1>
-    <p>Render free-tier nukkuu. Paina nappia herättääksesi palvelimen (kestää 30–60 sekuntia).</p>
-    <button id="refreshBtn">Refresh</button>
-  </div>
 
-  <div class="container">
-    <div class="nav">
-      <div class="eyebrow"><span class="dot"></span>Pukku Pankki</div>
-      <a id="logout">Kirjaudu ulos</a>
+<div id="sleepOverlay">
+  <h1>SERVER IS SLEEPING</h1>
+  <p>Render-palvelin nukkuu. Herätetään se ja yritetään uudelleen.</p>
+  <button id="refreshBtn">Herätä serveri</button>
+</div>
+
+<main class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      Pukku
     </div>
 
-    <div class="card">
-      <p class="muted" style="margin:0">Hei, <strong id="username">...</strong></p>
-      <div class="balance-big" id="balance">—</div>
-      <p class="muted" style="margin:0">Käytettävissä oleva saldo</p>
-      <div class="id-badge">Oma ID: <span id="myId">—</span></div>
+    <button class="logout" id="logout">
+      Kirjaudu ulos
+    </button>
+  </header>
+
+  <section class="layout">
+
+    <div class="card balance-card">
+
+      <div>
+        <div class="label">Pukku Pankki</div>
+
+        <div class="greeting">
+          Hei, <span id="username">...</span> 👋
+        </div>
+
+        <div class="balance" id="balance">
+          —
+        </div>
+
+        <div class="label">
+          Käytettävissä oleva saldo
+        </div>
+      </div>
+
+      <div class="account-row">
+
+        <div class="id">
+          ID <span id="myId">—</span>
+        </div>
+
+        <button class="copy" id="copyId">
+          Kopioi ID
+        </button>
+
+      </div>
+
     </div>
 
-    <div class="card">
-      <a href="pay.html" class="btn">Siirrä pukkuja</a>
+    <div class="card actions">
+
+      <h2>Siirrä pukkuja</h2>
+
+      <p>
+        Lähetä pukkuja toiselle käyttäjälle hänen käyttäjä-ID:llään.
+      </p>
+
+      <a class="primary" href="/pay.html">
+        Siirrä pukkuja →
+      </a>
+
     </div>
 
-    <div class="card">
+  </section>
+
+  <section class="card transactions">
+
+    <div class="section-head">
       <h2>Tapahtumat</h2>
-      <div id="txs"><p class="muted">Ladataan...</p></div>
+      <span class="status">● Live</span>
     </div>
-  </div>
 
-  <script>
-    const overlay = document.getElementById('sleepOverlay');
+    <div id="txs">
+      <div class="loading">Ladataan tapahtumia...</div>
+    </div>
 
-    function showPopup(message, type = 'error') {
-      const popup = document.createElement('div');
-      popup.className = type === 'error' ? 'error-popup' : 'success-popup';
-      popup.textContent = message;
-      document.body.appendChild(popup);
-      
-      setTimeout(() => {
-        popup.classList.add('removing');
-        setTimeout(() => popup.remove(), 300);
-      }, 4000);
+  </section>
+
+</main>
+
+<script>
+const overlay = document.getElementById("sleepOverlay");
+
+function showToast(message, type = "success") {
+  const toast = document.createElement("div");
+
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 3000);
+}
+
+async function fetchWithTimeout(url, options = {}, timeout = 7000) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      credentials: "include"
+    });
+
+    clearTimeout(timer);
+
+    return response;
+  } catch (error) {
+    clearTimeout(timer);
+    throw error;
+  }
+}
+
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatDate(value) {
+  const date = new Date(value);
+
+  return date.toLocaleString("fi-FI", {
+    day: "numeric",
+    month: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+async function loadDashboard() {
+  try {
+    const meResponse = await fetchWithTimeout("/api/me");
+
+    if (meResponse.status === 401) {
+      location.href = "/login.html";
+      return;
     }
 
-    async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      
-      try {
-        const response = await fetch(url, {
-          ...options,
-          signal: controller.signal,
-          credentials: 'include'
-        });
-        clearTimeout(timeoutId);
-        return response;
-      } catch (err) {
-        clearTimeout(timeoutId);
-        throw err;
-      }
+    if (!meResponse.ok) {
+      throw new Error("Server error");
     }
 
-    async function load() {
-      try {
-        const res = await fetchWithTimeout('/api/me', {}, 5000);
+    const me = await meResponse.json();
 
-        if (res.status === 401) {
-          location.href = 'login.html';
-          return;
-        }
+    overlay.style.display = "none";
 
-        if (!res.ok) {
-          throw new Error('Server error: ' + res.status);
-        }
+    document.getElementById("username").textContent = me.username;
+    document.getElementById("balance").textContent = me.balanceStr;
+    document.getElementById("myId").textContent = me.id;
 
-        overlay.style.display = 'none';
+    const txResponse = await fetchWithTimeout("/api/transactions");
 
-        const data = await res.json();
-        document.getElementById('username').textContent = data.username;
-        document.getElementById('balance').textContent = data.balanceStr;
-        document.getElementById('myId').textContent = data.id;
+    if (!txResponse.ok) {
+      throw new Error("Transaction error");
+    }
 
-        const txRes = await fetchWithTimeout('/api/transactions', {}, 5000);
-        if (!txRes.ok) {
-          throw new Error('Transaction fetch failed');
-        }
+    const transactions = await txResponse.json();
+    const container = document.getElementById("txs");
 
-        const txs = await txRes.json();
-        const box = document.getElementById('txs');
+    if (!transactions.length) {
+      container.innerHTML = `
+        <div class="empty">
+          Ei vielä tapahtumia.<br>
+          <span>Ensimmäinen siirtosi näkyy täällä.</span>
+        </div>
+      `;
 
-        if (!txs.length) {
-          box.innerHTML = '<p class="muted">Ei vielä tapahtumia.</p>';
-          return;
-        }
+      return;
+    }
 
-        box.innerHTML = txs.map(tx => `
-          <div class="tx">
-            <div>
-              ${tx.isOut ? '→ ' + tx.to_name + ' (ID ' + tx.to_user + ')' : '← ' + (tx.from_name || '?') + ' (ID ' + tx.from_user + ')'}
-              ${tx.note ? '<br><span class="muted" style="font-size:12px">'+tx.note+'</span>' : ''}
-              <br><span class="muted" style="font-size:12px">${tx.created_at.slice(0,16).replace('T',' ')}</span>
-            </div>
-            <div class="${tx.isOut ? 'out' : 'in'}">${tx.isOut ? '-' : '+'}${tx.amountStr}</div>
+    container.innerHTML = transactions.map(tx => {
+      const outgoing = tx.isOut;
+
+      const name = outgoing
+        ? (tx.to_name || `ID ${tx.to_user}`)
+        : (tx.from_name || `ID ${tx.from_user}`);
+
+      const arrow = outgoing ? "↑" : "↓";
+
+      return `
+        <div class="tx">
+
+          <div class="tx-icon ${outgoing ? "out" : "in"}">
+            ${arrow}
           </div>
-        `).join('');
-      } catch (err) {
-        if (err.name === 'AbortError' || err instanceof TypeError) {
-          overlay.style.display = 'flex';
-        }
-      }
+
+          <div class="tx-info">
+
+            <div class="tx-name">
+              ${escapeHTML(name)}
+            </div>
+
+            <div class="tx-meta">
+              ${escapeHTML(tx.note || "Pukku-siirto")}
+              · ${escapeHTML(formatDate(tx.created_at))}
+            </div>
+
+          </div>
+
+          <div class="tx-amount ${outgoing ? "out" : "in"}">
+            ${outgoing ? "-" : "+"}${escapeHTML(tx.amountStr)}
+          </div>
+
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    if (
+      error.name === "AbortError" ||
+      error instanceof TypeError
+    ) {
+      overlay.style.display = "flex";
+    } else {
+      showToast("Tietojen lataaminen epäonnistui", "error");
     }
+  }
+}
 
-    document.getElementById('logout').onclick = async () => {
-      await fetchWithTimeout('/api/logout', { method: 'POST' }, 3000).catch(() => {});
-      location.href = 'login.html';
-    };
+document.getElementById("logout").addEventListener("click", async () => {
+  try {
+    await fetchWithTimeout("/api/logout", {
+      method: "POST"
+    }, 5000);
+  } finally {
+    location.href = "/login.html";
+  }
+});
 
-    load();
-  </script>
+document.getElementById("copyId").addEventListener("click", async () => {
+  const id = document.getElementById("myId").textContent;
+
+  try {
+    await navigator.clipboard.writeText(id);
+    showToast("ID kopioitu!");
+  } catch {
+    showToast("ID:n kopiointi epäonnistui", "error");
+  }
+});
+
+document.getElementById("refreshBtn").addEventListener("click", () => {
+  location.reload();
+});
+
+loadDashboard();
+</script>
+
 </body>
 </html>
