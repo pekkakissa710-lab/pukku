@@ -7,7 +7,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root{--ink:#EEF2FA;--panel:#fff;--blue:#3E7BFA;--blue-soft:#2A5FE0;--blue-glow:rgba(62,123,250,.28);--line:rgba(16,24,40,.09);--text:#10182B;--muted:#7C879E;--success:#10B981;--error:#EF4444}
-    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);font-family:Inter,sans-serif;color:var(--text);padding:24px}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,rgba(62,123,250,.08),transparent 60%),var(--ink);font-family:Inter,sans-serif;color:var(--text)}
     .container{max-width:480px;margin:0 auto}
     .card{background:var(--panel);border-radius:24px;padding:28px 24px;border:1px solid var(--line);box-shadow:0 20px 50px -20px rgba(16,24,40,.15);margin-bottom:20px}
     .eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
@@ -17,7 +17,7 @@
     .balance-big{font-family:'Space Grotesk',sans-serif;font-size:36px;font-weight:700;margin:8px 0 4px}
     .muted{color:var(--muted);font-size:14px}
     h2{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:0 0 16px}
-    .btn{display:block;width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;text-align:center;text-decoration:none;box-shadow:0 10px 25px -8px var(--blue-glow)}
+    .btn{display:block;width:100%;padding:14px;border:none;border-radius:14px;font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--blue),var(--blue-soft));cursor:pointer;text-decoration:none}
     .tx{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line);font-size:14px}
     .tx:last-child{border-bottom:none}
     .out{color:var(--error)}.in{color:var(--success)}
@@ -70,23 +70,47 @@
   <script>
     const overlay = document.getElementById('sleepOverlay');
 
+    // Fetch with timeout
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 5000) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      
+      try {
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal,
+          credentials: 'include'
+        });
+        clearTimeout(timeoutId);
+        return response;
+      } catch (err) {
+        clearTimeout(timeoutId);
+        throw err;
+      }
+    }
+
     document.getElementById('refreshBtn').onclick = () => {
       overlay.querySelector('p').textContent = 'Herätetään serveriä… odota 30–60s';
-      fetch('/api/health').catch(()=>{});
+      fetchWithTimeout('/api/health', {}, 6000).catch(() => {});
       setTimeout(() => location.reload(), 4000);
     };
 
     async function load() {
       try {
-        const res = await fetch('/api/me', { credentials: 'include' });
+        // Timeout 5s - Render free tier usually wakes within that, if sleeping it takes 30-60s
+        const res = await fetchWithTimeout('/api/me', {}, 5000);
 
         if (res.status === 401) {
           location.href = 'login.html';
           return;
         }
 
-        if (!res.ok) throw new Error('Server error');
+        if (!res.ok) {
+          console.error('Server error:', res.status);
+          throw new Error('Server error: ' + res.status);
+        }
 
+        // If we got a successful response, hide overlay
         overlay.style.display = 'none';
 
         const data = await res.json();
@@ -94,7 +118,12 @@
         document.getElementById('balance').textContent = data.balanceStr;
         document.getElementById('myId').textContent = data.id;
 
-        const txRes = await fetch('/api/transactions', { credentials: 'include' });
+        const txRes = await fetchWithTimeout('/api/transactions', {}, 5000);
+        if (!txRes.ok) {
+          console.error('Transaction fetch failed:', txRes.status);
+          return;
+        }
+
         const txs = await txRes.json();
         const box = document.getElementById('txs');
 
@@ -110,16 +139,21 @@
               ${tx.note ? '<br><span class="muted" style="font-size:12px">'+tx.note+'</span>' : ''}
               <br><span class="muted" style="font-size:12px">${tx.created_at.slice(0,16).replace('T',' ')}</span>
             </div>
-            <div class="\( {tx.isOut ? 'out' : 'in'}"> \){tx.isOut ? '-' : '+'}${tx.amountStr}</div>
+            <div class="${tx.isOut ? 'out' : 'in'}">${tx.isOut ? '-' : '+'}${tx.amountStr}</div>
           </div>
         `).join('');
       } catch (err) {
-        overlay.style.display = 'flex';
+        // Only show sleep overlay on network errors (timeout, abort, etc)
+        // Not on HTTP errors
+        console.error('Load error:', err.message);
+        if (err.name === 'AbortError' || err instanceof TypeError) {
+          overlay.style.display = 'flex';
+        }
       }
     }
 
     document.getElementById('logout').onclick = async () => {
-      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      await fetchWithTimeout('/api/logout', { method: 'POST' }, 3000).catch(() => {});
       location.href = 'login.html';
     };
 
