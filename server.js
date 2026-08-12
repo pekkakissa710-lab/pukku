@@ -4,12 +4,16 @@ const bcrypt = require("bcryptjs");
 const Database = require("better-sqlite3");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// --- Tietokanta ---
-const db = new Database("pukku.db");
+// --- Tietokanta /data-kansioon ---
+const dataDir = path.join(__dirname, "data");
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+const db = new Database(path.join(dataDir, "pukku.db"));
 db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
@@ -34,16 +38,16 @@ db.exec(`
   );
 `);
 
-// Demo-käyttäjät
+// Demo-käyttäjät (alkusaldo 0)
 const count = db.prepare("SELECT COUNT(*) AS c FROM users").get().c;
 if (count === 0) {
   const insert = db.prepare("INSERT INTO users (username, password_hash, balance) VALUES (?, ?, ?)");
   [
-    ["alice", "alice123", 10000],
-    ["bob", "bob123", 5000],
-    ["carol", "carol123", 2500]
+    ["alice", "alice123", 0],
+    ["bob", "bob123", 0],
+    ["carol", "carol123", 0]
   ].forEach(([u, p, b]) => insert.run(u, bcrypt.hashSync(p, 10), b));
-  console.log("Demo-käyttäjät luotu");
+  console.log("Demo-käyttäjät luotu (saldo 0)");
 }
 
 // --- Middleware ---
@@ -57,10 +61,8 @@ app.use(session({
   cookie: { maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
-// Staattiset HTML-tiedostot juuresta
 app.use(express.static(__dirname));
 
-// --- Apufunktiot ---
 function formatPukku(cents) {
   return (cents / 100).toLocaleString("fi-FI", {
     minimumFractionDigits: 2,
@@ -75,9 +77,12 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// --- API ---
+// Health (wake-up)
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", time: new Date().toISOString() });
+});
 
-// Rekisteröinti
+// Rekisteröinti (ei lahjaa)
 app.post("/api/register", (req, res) => {
   const username = (req.body.username || "").trim().toLowerCase();
   const password = req.body.password || "";
@@ -87,8 +92,8 @@ app.post("/api/register", (req, res) => {
 
   try {
     const hash = bcrypt.hashSync(password, 10);
-    db.prepare("INSERT INTO users (username, password_hash, balance) VALUES (?, ?, ?)").run(username, hash, 1000);
-    res.json({ success: true, message: "Tili luotu" });
+    db.prepare("INSERT INTO users (username, password_hash, balance) VALUES (?, ?, ?)").run(username, hash, 0);
+    res.json({ success: true });
   } catch {
     res.status(400).json({ error: "Käyttäjänimi on jo käytössä" });
   }
@@ -106,22 +111,29 @@ app.post("/api/login", (req, res) => {
 
   req.session.userId = user.id;
   req.session.username = user.username;
-  res.json({ success: true, username: user.username });
+  res.json({ success: true, username: user.username, id: user.id });
 });
 
-// Uloskirjautuminen
 app.post("/api/logout", (req, res) => {
   req.session.destroy(() => res.json({ success: true }));
 });
 
-// Saldo + käyttäjäinfo
+// Omat tiedot
 app.get("/api/me", requireAuth, (req, res) => {
   const user = db.prepare("SELECT id, username, balance FROM users WHERE id = ?").get(req.session.userId);
   res.json({
+    id: user.id,
     username: user.username,
     balance: user.balance,
     balanceStr: formatPukku(user.balance)
   });
+});
+
+// Käyttäjät ID:llä (siirtoa varten)
+app.get("/api/user/:id", requireAuth, (req, res) => {
+  const user = db.prepare("SELECT id, username FROM users WHERE id = ?").get(req.params.id);
+  if (!user) return res.status(404).json({ error: "Käyttäjää ei löydy" });
+  res.json(user);
 });
 
 // Tapahtumat
@@ -143,9 +155,9 @@ app.get("/api/transactions", requireAuth, (req, res) => {
   })));
 });
 
-// Siirto
+// Siirto vastaanottajan ID:llä
 app.post("/api/transfer", requireAuth, (req, res) => {
-  const to = (req.body.to || "").trim().toLowerCase();
+  const toId = parseInt(req.body.toId, 10);
   const note = (req.body.note || "").trim().slice(0, 100);
   let cents;
 
@@ -158,10 +170,12 @@ app.post("/api/transfer", requireAuth, (req, res) => {
     return res.status(400).json({ error: "Virheellinen summa" });
   }
 
+  if (!toId) return res.status(400).json({ error: "Vastaanottajan ID puuttuu" });
+
   try {
     const transfer = db.transaction(() => {
       const sender = db.prepare("SELECT * FROM users WHERE id = ?").get(req.session.userId);
-      const receiver = db.prepare("SELECT * FROM users WHERE username = ?").get(to);
+      const receiver = db.prepare("SELECT * FROM users WHERE id = ?").get(toId);
 
       if (!receiver) throw new Error("Vastaanottajaa ei löydy");
       if (receiver.id === sender.id) throw new Error("Et voi lähettää itsellesi");
@@ -180,7 +194,6 @@ app.post("/api/transfer", requireAuth, (req, res) => {
   }
 });
 
-// Käynnistys
 app.listen(PORT, () => {
   console.log("Pukku Pankki käynnissä portissa " + PORT);
 });
