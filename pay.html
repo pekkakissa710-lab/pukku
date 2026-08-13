@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Siirrä — Pukku</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -25,16 +27,29 @@
   -webkit-tap-highlight-color:transparent;
 }
 
+html,
+body{
+  min-height:100%;
+}
+
 body{
   margin:0;
   min-height:100vh;
+
   display:flex;
   align-items:center;
   justify-content:center;
+
   padding:18px;
+
   background:
-    radial-gradient(900px 500px at 50% -100px,rgba(62,123,250,.14),transparent 65%),
+    radial-gradient(
+      900px 500px at 50% -100px,
+      rgba(62,123,250,.14),
+      transparent 65%
+    ),
     var(--bg);
+
   color:var(--text);
   font-family:Inter,sans-serif;
 }
@@ -43,32 +58,46 @@ body{
   width:100%;
   max-width:410px;
   min-height:680px;
+
   padding:28px;
+
   border-radius:32px;
   border:1px solid var(--line);
+
   background:#fff;
-  box-shadow:0 30px 80px -35px rgba(16,24,40,.25);
+
+  box-shadow:
+    0 30px 80px -35px rgba(16,24,40,.25);
+
   display:flex;
   flex-direction:column;
+
   position:relative;
   overflow:hidden;
 }
 
 .device::after{
   content:"";
+
   position:absolute;
+
   width:300px;
   height:300px;
+
   border-radius:50%;
+
   background:rgba(62,123,250,.05);
+
   right:-170px;
   top:-130px;
+
   pointer-events:none;
 }
 
 .header{
   position:relative;
-  z-index:2;
+  z-index:10;
+
   display:flex;
   align-items:center;
 }
@@ -77,9 +106,12 @@ body{
   display:flex;
   align-items:center;
   gap:9px;
+
   color:var(--muted);
+
   font-size:11px;
   font-weight:600;
+
   letter-spacing:.15em;
   text-transform:uppercase;
 }
@@ -87,80 +119,145 @@ body{
 .dot{
   width:7px;
   height:7px;
+
   border-radius:50%;
+
   background:var(--blue);
-  box-shadow:0 0 14px rgba(62,123,250,.5);
+
+  box-shadow:
+    0 0 14px rgba(62,123,250,.5);
 }
 
 .back{
   margin-left:auto;
+
   color:var(--muted);
+
   text-decoration:none;
+
   font-size:13px;
 }
 
 #payView{
   position:relative;
-  z-index:2;
+  z-index:10;
+
   display:flex;
   flex-direction:column;
+
   flex:1;
 }
 
+/* RECEIVER */
+
 .receiver{
+  position:relative;
+  z-index:30;
+
   margin-top:28px;
+
+  pointer-events:auto;
 }
 
 .receiver label{
   display:block;
+
   margin-bottom:8px;
+
   color:var(--muted);
+
   font-size:12px;
   font-weight:600;
 }
 
-.receiver input{
+#toId{
+  position:relative;
+  z-index:31;
+
+  display:block;
+
   width:100%;
+  height:50px;
+
   padding:14px;
+
   border:1px solid var(--line);
   border-radius:14px;
+
   background:#f6f8fc;
+
   text-align:center;
-  font:600 16px "Space Grotesk",sans-serif;
+
   color:var(--text);
+
+  font-family:"Space Grotesk",sans-serif;
+  font-size:16px;
+  font-weight:600;
+
+  outline:none;
+
+  pointer-events:auto;
+  user-select:text;
+  -webkit-user-select:text;
+
+  touch-action:manipulation;
 }
 
-.receiver input:focus{
-  outline:0;
-  border-color:var(--blue);
+#toId:focus{
   background:#fff;
+
+  border-color:var(--blue);
+
+  box-shadow:
+    0 0 0 4px rgba(62,123,250,.08);
+}
+
+#toId::placeholder{
+  color:#9aa4b6;
 }
 
 .receiver-name{
-  height:20px;
+  min-height:20px;
+
   margin-top:8px;
+
   text-align:center;
+
   color:var(--blue);
+
   font-size:13px;
 }
 
+/* AMOUNT */
+
 .amount-wrap{
   flex:1;
+
   display:flex;
   flex-direction:column;
+
   justify-content:center;
   align-items:center;
+
+  pointer-events:none;
 }
 
 .amount-row{
   display:flex;
+
   align-items:baseline;
+
   gap:8px;
 }
 
 .amount{
-  font:700 55px "Space Grotesk",sans-serif;
+  font:
+    700 55px
+    "Space Grotesk",
+    sans-serif;
+
   letter-spacing:-.05em;
+
   font-variant-numeric:tabular-nums;
 }
 
@@ -170,170 +267,267 @@ body{
 
 .currency{
   color:var(--muted);
-  font:600 20px "Space Grotesk",sans-serif;
+
+  font:
+    600 20px
+    "Space Grotesk",
+    sans-serif;
 }
 
 .amount-label{
   margin-top:8px;
+
   color:var(--muted);
+
   font-size:12px;
 }
 
+/* KEYPAD */
+
 .keypad{
+  position:relative;
+  z-index:20;
+
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+
+  grid-template-columns:
+    repeat(3,1fr);
+
   gap:10px;
 }
 
 .key{
+  position:relative;
+  z-index:21;
+
   border:1px solid var(--line);
   border-radius:15px;
+
   padding:15px 0;
+
   background:#f6f8fc;
+
   color:var(--text);
-  font:600 19px "Space Grotesk",sans-serif;
+
+  font:
+    600 19px
+    "Space Grotesk",
+    sans-serif;
+
   cursor:pointer;
+
+  touch-action:manipulation;
 }
 
 .key:active{
   transform:scale(.94);
-  background:rgba(62,123,250,.1);
+
+  background:
+    rgba(62,123,250,.1);
 }
 
 .key.func{
   color:var(--muted);
+
   font-size:13px;
 }
+
+/* ERROR */
 
 .error{
   display:none;
+
+  position:relative;
+  z-index:20;
+
   margin-top:12px;
+
   padding:11px 14px;
+
   border-radius:13px;
-  background:rgba(239,68,68,.08);
-  border:1px solid rgba(239,68,68,.2);
+
+  background:
+    rgba(239,68,68,.08);
+
+  border:
+    1px solid
+    rgba(239,68,68,.2);
+
   color:#b91c1c;
+
   text-align:center;
+
   font-size:13px;
 }
 
+.error.show{
+  display:block;
+}
+
+/* PAY BUTTON */
+
 .pay{
+  position:relative;
+  z-index:20;
+
   width:100%;
+
   margin-top:14px;
+
   padding:17px;
+
   border:0;
+
   border-radius:17px;
+
   color:white;
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  font:600 17px "Space Grotesk",sans-serif;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--blue),
+      var(--blue2)
+    );
+
+  font:
+    600 17px
+    "Space Grotesk",
+    sans-serif;
+
   cursor:pointer;
-  box-shadow:0 15px 30px -15px rgba(62,123,250,.7);
+
+  box-shadow:
+    0 15px 30px -15px
+    rgba(62,123,250,.7);
 }
 
 .pay:disabled{
   opacity:.4;
+
   cursor:not-allowed;
+
   box-shadow:none;
 }
 
+/* SUCCESS */
+
 #successView{
   display:none;
+
   position:relative;
-  z-index:2;
+  z-index:10;
+
   flex:1;
+
   align-items:center;
   justify-content:center;
+
   flex-direction:column;
+
   text-align:center;
 }
 
 .success-icon{
-  width:80px;
-  height:80px;
+  width:90px;
+  height:90px;
+
   display:grid;
   place-items:center;
-  border-radius:26px;
-  background:rgba(16,185,129,.1);
-  color:var(--green);
-  font-size:42px;
+
+  border-radius:28px;
+
+  background:
+    rgba(62,123,250,.1);
+
+  color:var(--blue);
+
+  font-size:48px;
   font-weight:700;
+
+  box-shadow:
+    0 20px 45px -20px
+    rgba(62,123,250,.5);
 }
 
 .success-title{
   margin-top:22px;
-  font:700 27px "Space Grotesk",sans-serif;
+
+  font:
+    700 27px
+    "Space Grotesk",
+    sans-serif;
 }
 
 .success-sub{
   margin-top:8px;
+
   color:var(--muted);
+
   font-size:14px;
 }
 
 .success-amount{
   margin-top:17px;
+
   padding:9px 16px;
+
   border-radius:999px;
-  background:rgba(62,123,250,.08);
+
+  background:
+    rgba(62,123,250,.08);
+
   color:var(--blue);
+
   font-size:13px;
   font-weight:600;
 }
 
+.success-recipient{
+  margin-top:9px;
+
+  color:var(--muted);
+
+  font-size:12px;
+}
+
 .new{
   margin-top:25px;
+
   border:1px solid var(--line);
   border-radius:13px;
+
   padding:11px 18px;
+
   background:#fff;
+
   color:var(--muted);
+
   cursor:pointer;
 }
 
 .dashboard-link{
   margin-top:14px;
+
   color:var(--muted);
+
   font-size:13px;
+
   text-decoration:none;
 }
 
-#sleepOverlay{
-  position:fixed;
-  inset:0;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  padding:30px;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-  z-index:999;
-}
+/* LOADING */
 
-#sleepOverlay h2{
-  margin:0 0 10px;
-  font:700 30px "Space Grotesk",sans-serif;
-}
+.loading{
+  opacity:.75 !important;
 
-#sleepOverlay p{
-  max-width:340px;
-  color:#94a3b8;
-  line-height:1.5;
-}
-
-#refreshBtn{
-  border:0;
-  border-radius:14px;
-  padding:14px 24px;
-  background:linear-gradient(135deg,var(--blue),var(--blue2));
-  color:white;
-  font:600 15px "Space Grotesk",sans-serif;
+  pointer-events:none;
 }
 
 @media(max-height:760px){
+
   .device{
-    min-height:calc(100vh - 20px);
+    min-height:
+      calc(100vh - 20px);
   }
 
   .amount{
@@ -344,282 +538,905 @@ body{
     padding:11px 0;
   }
 }
+
+@media(max-width:420px){
+
+  body{
+    padding:10px;
+  }
+
+  .device{
+    min-height:
+      calc(100vh - 20px);
+
+    padding:24px 20px;
+
+    border-radius:26px;
+  }
+}
 </style>
 </head>
 
 <body>
 
-<div id="sleepOverlay">
-  <h2>SERVER IS SLEEPING</h2>
-  <p>Render-palvelin nukkuu. Herätetään se.</p>
-  <button id="refreshBtn">Yritä uudelleen</button>
-</div>
-
 <main class="device">
 
   <header class="header">
+
     <div class="brand">
       <span class="dot"></span>
       Pukku Pankki
     </div>
 
-    <a class="back" href="/">← Takaisin</a>
+    <a
+      class="back"
+      href="/"
+    >
+      ← Takaisin
+    </a>
+
   </header>
+
 
   <section id="payView">
 
+    <!-- RECEIVER -->
+
     <div class="receiver">
 
-      <label for="toId">Vastaanottajan ID</label>
+      <label for="toId">
+        Vastaanottajan ID
+      </label>
 
       <input
         id="toId"
-        type="number"
-        min="1"
+        type="text"
         inputmode="numeric"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
         placeholder="esim. 2"
       >
 
-      <div class="receiver-name" id="receiverName"></div>
+      <div
+        class="receiver-name"
+        id="receiverName"
+      ></div>
 
     </div>
+
+
+    <!-- AMOUNT -->
 
     <div class="amount-wrap">
 
       <div class="amount-row">
-        <span class="amount placeholder" id="amount">0,00</span>
-        <span class="currency">pukku</span>
+
+        <span
+          class="amount placeholder"
+          id="amount"
+        >
+          0,00
+        </span>
+
+        <span class="currency">
+          pukku
+        </span>
+
       </div>
 
-      <div class="amount-label">Syötä summa</div>
+      <div class="amount-label">
+        Syötä summa
+      </div>
 
     </div>
 
-    <div class="keypad" id="keypad">
 
-      <button class="key" data-key="1">1</button>
-      <button class="key" data-key="2">2</button>
-      <button class="key" data-key="3">3</button>
+    <!-- KEYPAD -->
 
-      <button class="key" data-key="4">4</button>
-      <button class="key" data-key="5">5</button>
-      <button class="key" data-key="6">6</button>
+    <div
+      class="keypad"
+      id="keypad"
+    >
 
-      <button class="key" data-key="7">7</button>
-      <button class="key" data-key="8">8</button>
-      <button class="key" data-key="9">9</button>
+      <button
+        class="key"
+        type="button"
+        data-key="1"
+      >
+        1
+      </button>
 
-      <button class="key func" data-key="clear">Tyhjennä</button>
-      <button class="key" data-key="0">0</button>
-      <button class="key func" data-key="back">⌫</button>
+      <button
+        class="key"
+        type="button"
+        data-key="2"
+      >
+        2
+      </button>
+
+      <button
+        class="key"
+        type="button"
+        data-key="3"
+      >
+        3
+      </button>
+
+
+      <button
+        class="key"
+        type="button"
+        data-key="4"
+      >
+        4
+      </button>
+
+      <button
+        class="key"
+        type="button"
+        data-key="5"
+      >
+        5
+      </button>
+
+      <button
+        class="key"
+        type="button"
+        data-key="6"
+      >
+        6
+      </button>
+
+
+      <button
+        class="key"
+        type="button"
+        data-key="7"
+      >
+        7
+      </button>
+
+      <button
+        class="key"
+        type="button"
+        data-key="8"
+      >
+        8
+      </button>
+
+      <button
+        class="key"
+        type="button"
+        data-key="9"
+      >
+        9
+      </button>
+
+
+      <button
+        class="key func"
+        type="button"
+        data-key="clear"
+      >
+        Tyhjennä
+      </button>
+
+      <button
+        class="key"
+        type="button"
+        data-key="0"
+      >
+        0
+      </button>
+
+      <button
+        class="key func"
+        type="button"
+        data-key="back"
+      >
+        ⌫
+      </button>
 
     </div>
 
-    <div class="error" id="error"></div>
 
-    <button class="pay" id="payButton" disabled>
+    <div
+      class="error"
+      id="error"
+    ></div>
+
+
+    <button
+      class="pay"
+      id="payButton"
+      type="button"
+      disabled
+    >
       Siirrä pukkuja
     </button>
 
   </section>
 
+
+  <!-- SUCCESS -->
+
   <section id="successView">
 
-    <div class="success-icon">✓</div>
+    <div class="success-icon">
+      ✓
+    </div>
 
-    <div class="success-title">Siirto onnistui!</div>
+    <div class="success-title">
+      Accepted!
+    </div>
 
-    <div class="success-sub">Pukut siirrettiin onnistuneesti.</div>
+    <div class="success-sub">
+      Maksu hyväksytty
+    </div>
 
-    <div class="success-amount" id="successAmount">0,00 pukku</div>
+    <div
+      class="success-amount"
+      id="successAmount"
+    >
+      0,00 pukku
+    </div>
 
-    <button class="new" id="newPayment">Uusi siirto</button>
+    <div
+      class="success-recipient"
+      id="successRecipient"
+    ></div>
 
-    <a class="dashboard-link" href="/">← Dashboard</a>
+    <button
+      class="new"
+      id="newPayment"
+      type="button"
+    >
+      Uusi maksu
+    </button>
+
+    <a
+      class="dashboard-link"
+      href="/"
+    >
+      ← Dashboard
+    </a>
 
   </section>
 
 </main>
 
-<script>
-const API_BASE = "https://pukku-1.onrender.com";
 
-const overlay = document.getElementById("sleepOverlay");
+<script>
+"use strict";
+
+/* =========================
+   PUKKU API
+========================= */
+
+const API_BASE =
+  "https://pukku-1.onrender.com";
+
+
+/* =========================
+   STATE
+========================= */
 
 let cents = 0;
 
-function formatCents(value) {
-  return (value / 100).toLocaleString("fi-FI", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+let recipientUser = null;
+
+let lookupTimer = null;
+
+let processing = false;
+
+
+/* =========================
+   ELEMENTS
+========================= */
+
+const toId =
+  document.getElementById("toId");
+
+const receiverName =
+  document.getElementById(
+    "receiverName"
+  );
+
+const amount =
+  document.getElementById("amount");
+
+const keypad =
+  document.getElementById("keypad");
+
+const errorBox =
+  document.getElementById("error");
+
+const payButton =
+  document.getElementById(
+    "payButton"
+  );
+
+const payView =
+  document.getElementById(
+    "payView"
+  );
+
+const successView =
+  document.getElementById(
+    "successView"
+  );
+
+const successAmount =
+  document.getElementById(
+    "successAmount"
+  );
+
+const successRecipient =
+  document.getElementById(
+    "successRecipient"
+  );
+
+const newPayment =
+  document.getElementById(
+    "newPayment"
+  );
+
+
+/* =========================
+   HELPERS
+========================= */
+
+function formatCents(value){
+
+  return (
+    value / 100
+  ).toLocaleString(
+    "fi-FI",
+    {
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    }
+  );
 }
 
-async function request(url, options = {}, timeout = 7000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
 
-  try {
-    const response = await fetch(API_BASE + url, {
-      ...options,
-      signal: controller.signal,
-      credentials: "include"
-    });
-    clearTimeout(timer);
-    return response;
-  } catch (error) {
-    clearTimeout(timer);
-    throw error;
-  }
+function showError(message){
+
+  errorBox.textContent =
+    message;
+
+  errorBox.classList.add(
+    "show"
+  );
 }
 
-async function checkAuth() {
-  try {
-    const response = await request("/api/me");
 
-    if (response.status === 401) {
-      location.href = "/login.html";
+function hideError(){
+
+  errorBox.textContent =
+    "";
+
+  errorBox.classList.remove(
+    "show"
+  );
+}
+
+
+function updateAmount(){
+
+  amount.textContent =
+    formatCents(cents);
+
+  amount.classList.toggle(
+    "placeholder",
+    cents === 0
+  );
+
+  updatePayButton();
+}
+
+
+function updatePayButton(){
+
+  const id =
+    toId.value.trim();
+
+  payButton.disabled =
+    processing ||
+    cents <= 0 ||
+    !id ||
+    !recipientUser;
+}
+
+
+/* =========================
+   RECIPIENT LOOKUP
+========================= */
+
+toId.addEventListener(
+  "input",
+  function(){
+
+    recipientUser = null;
+
+    receiverName.textContent =
+      "";
+
+    hideError();
+
+    clearTimeout(
+      lookupTimer
+    );
+
+    updatePayButton();
+
+    const value =
+      toId.value.trim();
+
+    if(!value){
       return;
     }
 
-    if (!response.ok) throw new Error();
-
-    overlay.style.display = "none";
-  } catch {
-    overlay.style.display = "flex";
+    lookupTimer =
+      setTimeout(
+        lookupRecipient,
+        300
+      );
   }
-}
+);
 
-function renderAmount() {
-  const amount = document.getElementById("amount");
-  amount.textContent = formatCents(cents);
-  amount.classList.toggle("placeholder", cents === 0);
-  updatePayButton();
-}
 
-function updatePayButton() {
-  const id = document.getElementById("toId").value;
-  const button = document.getElementById("payButton");
-  button.disabled = cents <= 0 || !id;
-}
+async function lookupRecipient(){
 
-let lookupTimer;
+  const value =
+    toId.value.trim();
 
-document.getElementById("toId").addEventListener("input", () => {
-  const id = document.getElementById("toId").value;
-  const name = document.getElementById("receiverName");
-
-  name.textContent = "";
-  clearTimeout(lookupTimer);
-  updatePayButton();
-
-  if (!id) return;
-
-  lookupTimer = setTimeout(async () => {
-    try {
-      const response = await request(`/api/user/${encodeURIComponent(id)}`);
-
-      if (response.ok) {
-        const user = await response.json();
-        name.textContent = user.username;
-      } else {
-        name.textContent = "Käyttäjää ei löydy";
-      }
-    } catch (error) {
-      if (error.name === "AbortError" || error instanceof TypeError) {
-        overlay.style.display = "flex";
-      }
-    }
-  }, 350);
-});
-
-document.getElementById("keypad").addEventListener("click", (event) => {
-  const button = event.target.closest(".key");
-  if (!button) return;
-
-  const key = button.dataset.key;
-
-  if (key === "clear") {
-    cents = 0;
-  } else if (key === "back") {
-    cents = Math.floor(cents / 10);
-  } else {
-    const digit = Number(key);
-    if (Number.isInteger(digit) && cents < 99999999) {
-      cents = cents * 10 + digit;
-    }
+  if(!value){
+    return;
   }
 
-  renderAmount();
-});
+  const id =
+    Number.parseInt(
+      value,
+      10
+    );
 
-document.getElementById("payButton").addEventListener("click", async () => {
-  const button = document.getElementById("payButton");
-  const error = document.getElementById("error");
-  const toId = document.getElementById("toId").value;
+  if(
+    !Number.isSafeInteger(id) ||
+    id < 1
+  ){
 
-  if (button.disabled) return;
+    receiverName.textContent =
+      "Virheellinen ID";
 
-  error.style.display = "none";
-  button.disabled = true;
-  button.textContent = "Käsitellään…";
+    receiverName.style.color =
+      "var(--red)";
 
-  try {
-    const response = await request("/api/transfer", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        toId,
-        amount: cents / 100
-      })
-    });
+    return;
+  }
 
-    const data = await response.json();
+  receiverName.textContent =
+    "Haetaan…";
 
-    if (!response.ok || !data.success) {
-      error.textContent = data.error || "Siirto epäonnistui";
-      error.style.display = "block";
-      button.textContent = "Siirrä pukkuja";
+  receiverName.style.color =
+    "var(--muted)";
+
+  try{
+
+    const response =
+      await fetch(
+        API_BASE +
+        "/api/user/" +
+        encodeURIComponent(id),
+        {
+          method:"GET",
+
+          credentials:"include",
+
+          headers:{
+            "Accept":
+              "application/json"
+          }
+        }
+      );
+
+    const data =
+      await response.json()
+        .catch(
+          () => ({})
+        );
+
+    /*
+      API vaatii kirjautumisen.
+    */
+
+    if(response.status === 401){
+
+      recipientUser = null;
+
+      receiverName.textContent =
+        "Kirjaudu sisään ensin";
+
+      receiverName.style.color =
+        "var(--red)";
+
       updatePayButton();
+
       return;
     }
 
-    document.getElementById("successAmount").textContent =
-      formatCents(cents) + " pukku";
+    if(!response.ok){
 
-    document.getElementById("payView").style.display = "none";
-    document.getElementById("successView").style.display = "flex";
-  } catch (err) {
-    if (err.name === "AbortError" || err instanceof TypeError) {
-      overlay.style.display = "flex";
-    } else {
-      document.getElementById("error").textContent =
-        "Verkkovirhe. Yritä uudelleen.";
-      document.getElementById("error").style.display = "block";
+      recipientUser = null;
+
+      receiverName.textContent =
+        data.error ||
+        "Käyttäjää ei löydy";
+
+      receiverName.style.color =
+        "var(--red)";
+
+      updatePayButton();
+
+      return;
     }
 
-    button.textContent = "Siirrä pukkuja";
+    /*
+      Varmistetaan ettei käyttäjä
+      ole vaihtanut ID:tä requestin
+      aikana.
+    */
+
+    if(
+      toId.value.trim() !==
+      String(id)
+    ){
+
+      return;
+    }
+
+    recipientUser =
+      data;
+
+    receiverName.textContent =
+      data.username +
+      "  •  #" +
+      data.id;
+
+    receiverName.style.color =
+      "var(--blue)";
+
+    updatePayButton();
+
+  }catch(error){
+
+    recipientUser = null;
+
+    receiverName.textContent =
+      "Palvelimeen ei saatu yhteyttä";
+
+    receiverName.style.color =
+      "var(--red)";
+
     updatePayButton();
   }
-});
+}
 
-document.getElementById("newPayment").addEventListener("click", () => {
-  cents = 0;
-  document.getElementById("toId").value = "";
-  document.getElementById("receiverName").textContent = "";
-  document.getElementById("error").style.display = "none";
-  document.getElementById("successView").style.display = "none";
-  document.getElementById("payView").style.display = "flex";
-  document.getElementById("payButton").textContent = "Siirrä pukkuja";
-  renderAmount();
-});
 
-document.getElementById("refreshBtn").addEventListener("click", () => {
-  location.reload();
-});
+/* =========================
+   KEYPAD
+========================= */
 
-renderAmount();
-checkAuth();
+keypad.addEventListener(
+  "click",
+  function(event){
+
+    const button =
+      event.target.closest(
+        ".key"
+      );
+
+    if(!button){
+      return;
+    }
+
+    if(processing){
+      return;
+    }
+
+    const key =
+      button.dataset.key;
+
+
+    if(key === "clear"){
+
+      cents = 0;
+
+    }else if(key === "back"){
+
+      cents =
+        Math.floor(
+          cents / 10
+        );
+
+    }else{
+
+      const digit =
+        Number.parseInt(
+          key,
+          10
+        );
+
+      if(
+        Number.isInteger(digit) &&
+        cents < 99999999
+      ){
+
+        cents =
+          cents * 10 +
+          digit;
+      }
+    }
+
+    hideError();
+
+    updateAmount();
+  }
+);
+
+
+/* =========================
+   PAYMENT
+========================= */
+
+payButton.addEventListener(
+  "click",
+  async function(){
+
+    if(
+      processing ||
+      payButton.disabled
+    ){
+
+      return;
+    }
+
+    const id =
+      Number.parseInt(
+        toId.value.trim(),
+        10
+      );
+
+    if(
+      !Number.isSafeInteger(id) ||
+      id < 1
+    ){
+
+      showError(
+        "Vastaanottajan ID on virheellinen."
+      );
+
+      return;
+    }
+
+    if(!recipientUser){
+
+      showError(
+        "Valitse kelvollinen vastaanottaja."
+      );
+
+      return;
+    }
+
+    if(cents <= 0){
+
+      showError(
+        "Syötä summa."
+      );
+
+      return;
+    }
+
+    processing = true;
+
+    hideError();
+
+    payButton.classList.add(
+      "loading"
+    );
+
+    payButton.textContent =
+      "Käsitellään…";
+
+    updatePayButton();
+
+
+    try{
+
+      /*
+        SERVER.JS ODOTTAA:
+
+        {
+          toId: number,
+          amount: number,
+          note: string
+        }
+      */
+
+      const response =
+        await fetch(
+          API_BASE +
+          "/api/transfer",
+          {
+            method:"POST",
+
+            credentials:"include",
+
+            headers:{
+              "Content-Type":
+                "application/json",
+
+              "Accept":
+                "application/json"
+            },
+
+            body:JSON.stringify({
+
+              toId:id,
+
+              amount:
+                cents / 100,
+
+              note:
+                "Pukku maksupääte"
+            })
+          }
+        );
+
+
+      const data =
+        await response.json()
+          .catch(
+            () => ({})
+          );
+
+
+      if(response.status === 401){
+
+        throw new Error(
+          "Kirjaudu sisään ennen maksamista."
+        );
+      }
+
+
+      if(
+        !response.ok ||
+        data.success !== true
+      ){
+
+        throw new Error(
+          data.error ||
+          "Maksu epäonnistui."
+        );
+      }
+
+
+      /*
+        TÄSSÄ KOHDASSA MAKSUN
+        PITÄÄ OLLA OIKEASTI
+        TALLENTUNUT SERVERILLE.
+
+        Serveri tekee:
+        sender.balance -= cents
+        receiver.balance += cents
+        saveJSON(...)
+      */
+
+      successAmount.textContent =
+        formatCents(
+          data.amount ??
+          cents
+        ) +
+        " pukku";
+
+
+      successRecipient.textContent =
+        "Vastaanottaja: " +
+        recipientUser.username +
+        " (#" +
+        recipientUser.id +
+        ")";
+
+
+      processing = false;
+
+      payView.style.display =
+        "none";
+
+      successView.style.display =
+        "flex";
+
+
+    }catch(error){
+
+      processing = false;
+
+      payButton.classList.remove(
+        "loading"
+      );
+
+      payButton.textContent =
+        "Siirrä pukkuja";
+
+      updatePayButton();
+
+      showError(
+        error.message ||
+        "Maksun käsittely epäonnistui."
+      );
+    }
+  }
+);
+
+
+/* =========================
+   NEW PAYMENT
+========================= */
+
+newPayment.addEventListener(
+  "click",
+  function(){
+
+    cents = 0;
+
+    recipientUser = null;
+
+    processing = false;
+
+    toId.value =
+      "";
+
+    receiverName.textContent =
+      "";
+
+    receiverName.style.color =
+      "var(--blue)";
+
+    hideError();
+
+    payButton.classList.remove(
+      "loading"
+    );
+
+    payButton.textContent =
+      "Siirrä pukkuja";
+
+    successView.style.display =
+      "none";
+
+    payView.style.display =
+      "flex";
+
+    updateAmount();
+
+    toId.focus();
+  }
+);
+
+
+/* =========================
+   INITIAL
+========================= */
+
+updateAmount();
+
+setTimeout(
+  function(){
+    toId.focus();
+  },
+  150
+);
 </script>
 
 </body>
